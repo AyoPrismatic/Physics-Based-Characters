@@ -1,0 +1,79 @@
+--Services
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local Players = game:GetService('Players')
+
+--Packages
+local Replecs = require(ReplicatedStorage.Packages.Replecs)
+local Planck = require(ReplicatedStorage.Packages.Planck)
+local Jecs = require(ReplicatedStorage.Packages.Jecs)
+
+--Modules
+local Collect = require(ReplicatedStorage.Utils.Collect)
+
+--ECS
+local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
+local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
+
+--Variables
+local ComponentInitializers = require(script.ComponentInitializers)
+local AddedPlayersCollection = Collect(Players.PlayerAdded)
+
+local function AddComponent(EntityID : number, ComponentID : number, ComponentValue : any)
+     if ComponentValue ~= nil then
+          Characters:set(EntityID, ComponentID, ComponentValue)
+     else
+          Characters:add(EntityID, ComponentID)
+     end
+end
+
+local function ReplicateComponent(EntityID : number, ComponentID : number, ReplicationType : number)
+     if not ReplicationType then return end
+
+     Characters:add(EntityID, Jecs.pair(ReplicationType, ComponentID))
+end
+
+local function OnPlayerAdded(Player : Player)
+     local EntityID = Characters:entity()
+     Characters:add(EntityID, Replecs.Networked)
+
+     for ComponentName, ComponentID in CharacterComponents.List do
+          local ReplicationType = CharacterComponents.SharedComponents[ComponentID]
+          local InitalizeFunction = ComponentInitializers[ComponentName]
+
+          if InitalizeFunction then
+               local Successful, ComponentValue = pcall(InitalizeFunction, Player, EntityID)
+               if Successful ~= true then
+                    local ErrorMSG = ComponentValue
+                    warn(`\n Failed to create Component:`..
+                         `\n Name: {ComponentName}` ..
+                         `\n Reason: {ErrorMSG}`)
+                    continue
+               end
+
+               AddComponent(EntityID, ComponentID, ComponentValue)
+          else
+               AddComponent(EntityID, ComponentID)
+          end
+
+          ReplicateComponent(EntityID, ComponentID, ReplicationType)
+     end
+
+     print(
+          `\n Created Player Character:`..
+          `\n Player Name: {Player.Name}`
+     )
+end
+
+local function ProcessPlayers()
+     for _, Player : Player in AddedPlayersCollection do
+          OnPlayerAdded(Player)
+     end
+end
+
+return {
+     name = "Character Creation",
+     system = ProcessPlayers,
+     runConditions = table.freeze({
+          Planck.onEvent(Players.PlayerAdded),
+     })
+}
