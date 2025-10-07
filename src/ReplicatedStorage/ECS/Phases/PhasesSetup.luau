@@ -8,10 +8,18 @@ local function SetupPhases(Scheduler : Planck.Scheduler, WorldSearchName : strin
      local PhasesModule = ReplicatedStorage.ECS.Phases:FindFirstChild(WorldSearchName)
 
      if PhasesModule then
-          local Phases = require(PhasesModule)
+          local PhaseFolder = require(PhasesModule)
           
-          for _, Phase in Phases do
-               Scheduler:insert(Phase)
+          for _, PhaseData in PhaseFolder do
+               if PhaseData["Before"] then
+                    Scheduler:insertBefore(PhaseData.Phase, PhaseData.Before)
+               elseif PhaseData["After"] then
+                    Scheduler:insertAfter(PhaseData.Phase, PhaseData.After)
+               else
+                    Scheduler:insert(PhaseData.Phase)
+               end
+
+               Scheduler:run(PhaseData.Phase)
           end
      end
 end

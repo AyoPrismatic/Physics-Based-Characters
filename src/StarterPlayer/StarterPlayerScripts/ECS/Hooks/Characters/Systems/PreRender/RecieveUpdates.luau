@@ -20,14 +20,6 @@ local RecievedFull : BindableEvent = ReplecEvents.RecievedFull
 local Unreliables = Collect(RequestUnreliable.OnClientEvent)
 local Reliables = Collect(RequestReliable.OnClientEvent)
 
-local ClientReplicatorReady = false
-
-RecievedFull.Event:Once(function()
-     ClientReplicatorReady = true
-
-     print("Client is updating data")
-end)
-
 local function UpdateClientData()
      for _, Buffer, Variants in Reliables do
           Replicator:apply_updates(Buffer, Variants)
@@ -37,14 +29,14 @@ local function UpdateClientData()
      end
 end
 
-local function ClientReplicatorIsReady()
-     return ClientReplicatorReady == true
-end
+return table.freeze({
+     Event = RecievedFull.Event,
 
-return {
-     name = "Data Updates",
-     system = UpdateClientData,
-     runConditions = table.freeze({
-          ClientReplicatorIsReady,
-     })
-}
+     SystemData = {
+          name = "Data Updates",
+          system = UpdateClientData,
+          runConditions = table.freeze({
+
+          })
+     }
+})

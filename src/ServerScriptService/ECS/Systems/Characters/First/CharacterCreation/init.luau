@@ -1,5 +1,6 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local ServerStorage = game:GetService('ServerStorage')
 local Players = game:GetService('Players')
 
 --Packages
@@ -8,6 +9,7 @@ local Planck = require(ReplicatedStorage.Packages.Planck)
 local Jecs = require(ReplicatedStorage.Packages.Jecs)
 
 --Modules
+local EntityIDsDataTable = require(ServerStorage.Entities.Character.PlayerEntityIDs)
 local Collect = require(ReplicatedStorage.Utils.Collect)
 
 --ECS
@@ -57,6 +59,8 @@ local function OnPlayerAdded(Player : Player)
 
           ReplicateComponent(EntityID, ComponentID, ReplicationType)
      end
+
+     EntityIDsDataTable.AddPair(Player, EntityID)
 
      print(
           `\n Created Player Character:`..

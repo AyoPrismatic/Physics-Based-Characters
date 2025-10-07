@@ -20,15 +20,19 @@ type PlayerVelocities = {[EntityID] : Velocity}
 local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 local PlayerVelocities : {[EntityID] : Velocity} = {}
 
-local MaxBounces = 5
-local AddedWidth = 0.02 -- Prevents wonky clipping
+local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
+local AddedLength = 0.05 -- Prevents wonky clipping
+local MaxBounces = 3
 
 local CharacterCollisionParams = RaycastParams.new()
---CharacterCollisionParams.FilterType = Enum.RaycastFilterType.Include
---CharacterCollisionParams.FilterDescendantsInstances = workspace
+CharacterCollisionParams.FilterType = Enum.RaycastFilterType.Include
+CharacterCollisionParams.FilterDescendantsInstances = {workspace}
 CharacterCollisionParams.RespectCanCollide = true
 CharacterCollisionParams.CollisionGroup = "Game"
 
+local function GetCollider(EntityID : number) : MeshPart
+     return Characters:get(EntityID, PhysicsColliderComponent)
+end
 
 local function MovePlayer(PhysicsCollider : Instance, MoveVector : Vector3)
      local CurrentCFrame : CFrame = PhysicsCollider:GetPivot()
@@ -38,37 +42,47 @@ end
 
 local function ProjectVelocity(LeftoverVelocity : Vector3, SurfaceNormal : Vector3) : Vector3
      local LeftOverVector : Vector3 = Vector3U.ProjectOnPlane(LeftoverVelocity, SurfaceNormal).Unit
-     local LeftOverDistance : Vector3 = LeftoverVelocity.Magnitude
 
-     return LeftOverVector * LeftOverDistance
+     return LeftOverVector * LeftoverVelocity.Magnitude
 end
 
-local function CollideAndSlide(EntityID : number, PhysicsCollider : BasePart, Velocity : Vector3, Depth : number) -- Depth == Recursions
-     if Depth >= MaxBounces then return Vector3.zero else
-          if not PhysicsCollider then
-               PhysicsCollider = Characters:get(EntityID, PhysicsColliderComponent)
-          end
-     end
+local function CollideAndSlide(EntityID : number, PhysicsCollider : MeshPart?, Velocity : Vector3, HorizontalDirection : Vector3, Depth : number) -- Depth == Recursions
+     if Depth >= MaxBounces then return end
+
+     local VelocityDirection = Velocity.Unit
+     local RayVector = VelocityDirection * (Velocity.Magnitude + AddedLength)
 
      local Collision : RaycastResult? = workspace:Shapecast(
           PhysicsCollider,
-          Velocity + Vector3.new(AddedWidth),
+          RayVector,
           CharacterCollisionParams
      )
-
+     
      if Collision then
-          local VectorToSurface = Velocity.Unit * (Collision.Distance - AddedWidth)
-          if VectorToSurface.Magnitude <= AddedWidth then
-               VectorToSurface = Vector3.zero
+          local DistanceToSurface = Collision.Distance - AddedLength
+          local VectorToSurface = Vector3.zero
+
+          if DistanceToSurface > AddedLength then
+               VectorToSurface = VelocityDirection * DistanceToSurface
           end
 
           local ProjectedVector = ProjectVelocity(
                Velocity - VectorToSurface, -- Remaining velocity from collision
                Collision.Normal
           )
+          
+          local Angle = Vector3.yAxis:Angle(Collision.Normal)
+          
+          if Angle >= MaxSlopeAngle then
+               --Makes the player move slower the more perpendicular their move direction is
+               local Normal = Vector3.new(Collision.Normal.X, 0, Collision.Normal.Z).Unit
+               local Scale = math.min(1, 1.2 - Normal:Dot(HorizontalDirection))
+
+               ProjectedVector *= Scale
+          end
 
           MovePlayer(PhysicsCollider, VectorToSurface)
-          CollideAndSlide(EntityID, PhysicsCollider, ProjectedVector, Depth + 1)
+          CollideAndSlide(EntityID, PhysicsCollider, ProjectedVector, HorizontalDirection, Depth + 1)
      else
           MovePlayer(PhysicsCollider, Velocity)
      end
@@ -78,7 +92,12 @@ local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
      for EntityID, Velocity in PlayerVelocities do
-          CollideAndSlide(EntityID, nil, Velocity * DT, 1)
+          if Velocity == Vector3.zero then continue end
+          Velocity *= DT
+
+          local HorizontalDirection = Vector3.new(Velocity.X, 0, Velocity.Z).Unit
+          
+          CollideAndSlide(EntityID, GetCollider(EntityID), Velocity, HorizontalDirection, 1)
      end
 end
 

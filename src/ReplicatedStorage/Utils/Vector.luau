@@ -9,7 +9,7 @@ return table.freeze({
           ProjectOnPlane = function(Vector : Vector3, PlaneNormal : Vector3) : Vector3
                local SqrMag = PlaneNormal:Dot(PlaneNormal)
 
-               if SqrMag <= math.pow(1, -5) then
+               if SqrMag <= 1e-3 then
                     return Vector
                else
                     local Dot = Vector:Dot(PlaneNormal)

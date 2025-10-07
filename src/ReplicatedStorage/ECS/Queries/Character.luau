@@ -15,8 +15,11 @@ local GravitySpringVelocity = Components.GravitySpringVelocity
 local PhysicsCollider = Components.PhysicsCollider
 local ForceVelocity = Components.ForceVelocity
 local MoveVelocity = Components.MoveVelocity
+local GroundNormal = Components.GroundNormal
+local LookVector = Components.LookVector
 local AbsoluteY = Components.AbsoluteY
 local Position = Components.Position
+local HeldKeys = Components.HeldKeys
 local Gravity = Components.Gravity
 local AirTime = Components.AirTime
 
@@ -25,7 +28,14 @@ local Component = CharacterComponents
 type EntityID = number
 
 return --[[Queries]] table.freeze({
-     GravityUpdates = Characters:query(AirTime):with(Position, Gravity):cached() :: {{
+     MovementRequests = Characters:query(HeldKeys, LookVector, GroundNormal):with(PhysicsCollider, Position, MoveVelocity):cached() :: {{
+          EntityID |
+          Component.HeldKeys |
+          Component.LookVector |
+          Component.GroundNormal
+     }},
+
+     GravityUpdates = Characters:query(AirTime):with(PhysicsCollider, Position, Gravity):cached() :: {{
           EntityID |
           Component.AirTime
      }},

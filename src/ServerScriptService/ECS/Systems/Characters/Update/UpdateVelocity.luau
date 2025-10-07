@@ -10,7 +10,6 @@ local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 
 local MovementAppliedEntities = CharacterQueries.MovementAppliedEntities
-local GravityAppliedEntities = CharacterQueries.GravityAppliedEntities
 local ForceAppliedEntities = CharacterQueries.ForceAppliedEntities
 
 --Types
@@ -18,14 +17,14 @@ type EntityID = number
 type Velocity = Vector3
 
 --Variables
-local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.Update.ApplyVelocity)
+local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.PreRender.ApplyVelocity)
 local PlayerVelocities : {[EntityID] : Velocity} = {}
 
 local function UpdateVelocity(EntityID : number, AddedForce : Vector3)
      PlayerVelocities[EntityID] += AddedForce
 end
 
-local function CalculateEntities()
+local function CalculateVelocities()
      for EntityID, MoveVelocity in MovementAppliedEntities do
           PlayerVelocities[EntityID] = MoveVelocity
      end
@@ -38,8 +37,8 @@ local function CalculateEntities()
 end
 
 return {
-     name = "Velocity Summation",
-     system = CalculateEntities,
+     name = "Velocity Updates",
+     system = CalculateVelocities,
      runConditions = table.freeze({
           
      })

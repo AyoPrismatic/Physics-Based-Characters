@@ -19,9 +19,9 @@ local GravityComponent = CharacterComponents.List.Gravity
 local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 
 --Constants
-local GRAVITYRATE = 100
+local GRAVITYRATE = 196.2
 
-local function IsFalling(EntityID) : boolean
+local function IsFalling(EntityID : number) : boolean
      return Characters:get(EntityID, PlayerStateComponent) == PlayerStates.Falling
 end
 

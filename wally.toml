@@ -1,5 +1,5 @@
 [package]
-name = "sagep/jecs-testing"
+name = "sagep/Physics-Based-Characters"
 version = "0.1.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"

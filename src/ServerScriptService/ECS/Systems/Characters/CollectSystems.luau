@@ -14,14 +14,26 @@ local DefaultPhases = Planck.Phase
 
 local Systems = {}
 
+local function FindPhase(PhaseName) : Planck.Phase?
+     local Phase = RunServicePhases[PhaseName] or DefaultPhases[PhaseName]
+     if Phase then return Phase end
+
+     local SuccessfullyFound, Phase = pcall(function()
+          return require(ReplicatedStorage.ECS.Phases.Character:FindFirstChild(PhaseName))
+     end)
+
+     if SuccessfullyFound then
+          return Phase.Phase
+     end
+end
+
 for _, PhaseFolder in SystemsFolder:GetChildren() do
      if not PhaseFolder:IsA("Folder") then continue end
-     local PhaseName = PhaseFolder.Name
 
-     local Phase = RunServicePhases[PhaseName] or DefaultPhases[PhaseName]
+     local Phase = FindPhase(PhaseFolder.Name)
      if not Phase then
           warn(`\n Invalid Phase Name in Systems folder!` ..
-               `\n Got: {PhaseName}`)
+               `\n Got: {PhaseFolder.Name}`)
           continue
      end
 

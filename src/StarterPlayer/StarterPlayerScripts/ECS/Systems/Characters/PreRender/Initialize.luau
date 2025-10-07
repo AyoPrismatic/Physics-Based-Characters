@@ -12,6 +12,10 @@ local Planck = require(ReplicatedStorage.Packages.Planck)
 --Modules
 local Replicator = require(PlayerScripts.ECS.Replicators.Characters)
 
+--Events
+local CharacterEvents = ReplicatedStorage.Events.Entities.Character
+local PhysicsColliderLoaded : BindableEvent = CharacterEvents.Client.PhysicsColliderLoaded
+
 --Variables
 local PhysicsCollidersFolder : Folder = workspace.Colliders.PlayerCharacter.Physics
 
@@ -21,27 +25,26 @@ local CharacterLoaded = false
 
 local DisconnectReplecsCallback = Replicator:added(function(EntityID)
      Replicator:after_replication(function()
-          CharacterEntityID = EntityID
+          CharacterEntityID = Replicator:get_server_entity(EntityID)
           CharacterLoaded = true
      end)
 end)
 
 local function ClientCharacterInitalize()
      workspace.CurrentCamera.CameraSubject = CharacterPhysicsCollider
-end
 
-local function IsCharacterLoaded() : boolean
-     if not CharacterLoaded then return false end
+     workspace.CurrentCamera:PivotTo(CFrame.new(workspace.CurrentCamera:GetPivot().Position) * CFrame.fromAxisAngle(Vector3.new(1, 0, 0), math.rad(12)))
      
-     DisconnectReplecsCallback()
-     return true
+     PhysicsColliderLoaded:Fire(CharacterPhysicsCollider)
 end
 
 local function IsColliderReplicated() : boolean
-     local PhysicsCollider = PhysicsCollidersFolder:FindFirstChild(tostring(CharacterEntityID))
-     if not PhysicsCollider then return false end
+     if not CharacterLoaded then return false end
+     DisconnectReplecsCallback()
 
-     CharacterPhysicsCollider = PhysicsCollider
+     CharacterPhysicsCollider = PhysicsCollidersFolder:FindFirstChild(tostring(CharacterEntityID))
+     if not CharacterPhysicsCollider then return false end
+
      return true
 end
 
@@ -49,9 +52,7 @@ return {
      name = "Self Character Initializing",
      system = ClientCharacterInitalize,
      runConditions = table.freeze({
-          IsCharacterLoaded,
           IsColliderReplicated,
-
           Planck.runOnce()
      })
 }

@@ -18,16 +18,16 @@ type EntityIndex = number
 type ComponentIndex = number
 
 --Component Types (made for other scripts to use)
+export type HeldKeys = Entity<{[Enum.KeyCode] : boolean}>
 export type GravitySpringVelocity = Entity<Vector3>
 export type PhysicsCollider = Entity<Instance>
 export type ForceVelocity = Entity<Vector3>
 export type MoveVelocity = Entity<Vector3>
+export type GroundNormal = Entity<Vector3>
+export type LookVector = Entity<Vector3>
 export type AbsoluteY = Entity<number>
 export type Gravity = Entity<number>
 export type AirTime = Entity<number>
-
-export type Player = Entity<Player>
-export type Name = Entity<string>
 
 --[[Components]]
 local Components = {
@@ -41,6 +41,7 @@ local Components = {
 
      --Gravity Variables
      GravitySpringVelocity = Characters:component() :: Entity<Vector3>, -- The Velocity for a second-order spring system
+     GroundNormal = Characters:component() :: Entity<Vector3>, -- The Normal of the collision between the collider and floor
      AbsoluteY = Characters:component() :: Entity<number>, -- The Y Position of the character without the spring system
      AirTime = Characters:component() :: Entity<number>,
 
@@ -48,6 +49,10 @@ local Components = {
      MaxTotalVelocity = Characters:component() :: Entity<number>,
      MaxMoveVelocity = Characters:component() :: Entity<Vector3>,
      MaxGravity = Characters:component() :: Entity<number>,
+
+     --Player Input Data
+     HeldKeys = Characters:component() :: Entity<{[Enum.KeyCode] : boolean}>,
+     LookVector = Characters:component() :: Entity<Vector3>,
      
      --Extra Values
      PlayerState = Characters:component() :: Entity<string>,
@@ -67,11 +72,9 @@ local SharedComponents = {
 }
 
 for ComponentName, ComponentID in Components do
-     print(`Set Name for ComponentID: {ComponentID} | "{ComponentName}"`)
      Characters:set(ComponentID, Jecs.Name, tostring(ComponentName))
 
      if SharedComponents[ComponentID] then
-          print(`Set Shared for ComponentID: {ComponentID} | "{ComponentName}"`)
           Characters:add(ComponentID, Replecs.Shared)
      end
 end

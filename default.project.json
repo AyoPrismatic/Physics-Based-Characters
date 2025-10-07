@@ -1,5 +1,5 @@
 {
-  "name": "JECSTesting",
+  "name": "Physics Based Characters",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
