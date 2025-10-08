@@ -27,7 +27,7 @@ local Frequency, Damping, Responsiveness = Interpolator.GenerateParameters(1.5, 
 
 local DownVector = Vector3.new(0, -1, 0)
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
-local AddedLength = 3 -- Prevents wonky clipping
+local AddedLength = 5 -- Prevents wonky clipping
 local FloatHeight = 1
 local MaxBounces = 3
 
@@ -65,11 +65,7 @@ local function GetAngle(SurfaceNormal : Vector3) : number
      return Vector3.yAxis:Angle(SurfaceNormal)
 end
 
-local function Round(Number) : number
-     return math.round(Number * 1000) / 1000
-end
-
-local function CollideAndSlide(EntityID : number, PhysicsCollider : MeshPart, Velocity : Vector3, HorizontalDirection : Vector3, Depth : number) -- Depth == Recursions
+local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider : MeshPart, Velocity : Vector3, HorizontalDirection : Vector3, Depth : number) -- Depth == Recursions
      if Depth >= MaxBounces then return end
 
      local ColliderSize = PhysicsCollider.Size
@@ -103,17 +99,22 @@ local function CollideAndSlide(EntityID : number, PhysicsCollider : MeshPart, Ve
           end
 
           local VectorToGoal = VelocityDirection * DistanceToFloatPoint
-          MovePlayer(PhysicsCollider, VectorToGoal)
+          local Angle = Vector3.yAxis:Angle(Collision.Normal)
           
           -- Slope isn't as steep as we want it for it to slide
-          if GetAngle(Collision.Normal) <= MaxSlopeAngle then return end
-
+          if Angle <= MaxSlopeAngle then
+               MovePlayer(PhysicsCollider, VectorToGoal)
+               return
+          end
+          
           local ProjectedVector = ProjectVelocity(
                Velocity - VectorToGoal, -- Remaining velocity from collision
                Collision.Normal
           )
 
-          CollideAndSlide(EntityID, PhysicsCollider, ProjectedVector, HorizontalDirection, Depth + 1)
+          DT += (Angle - MaxSlopeAngle) * (1 - (MaxSlopeAngle/Angle))
+
+          CollideAndSlide(DT, EntityID, PhysicsCollider, ProjectedVector * DT, HorizontalDirection, Depth + 1)
      else
           MovePlayer(PhysicsCollider, Velocity)
      end
@@ -170,7 +171,7 @@ local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
      for EntityID, PhysicsCollider, Gravity in GravityAppliedEntities do
-          CollideAndSlide(EntityID, PhysicsCollider, DownVector * (Gravity * DT), Vector3.new(0,0,0), 1)
+          CollideAndSlide(DT, EntityID, PhysicsCollider, DownVector * (Gravity * DT), Vector3.new(0,0,0), 1)
      end
 end
 

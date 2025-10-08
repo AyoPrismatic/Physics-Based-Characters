@@ -72,7 +72,7 @@ local function CollideAndSlide(EntityID : number, PhysicsCollider : MeshPart?, V
           )
           
           local Angle = Vector3.yAxis:Angle(Collision.Normal)
-          
+          --print(math.deg(Angle))
           if Angle >= MaxSlopeAngle then
                --Makes the player move slower the more perpendicular their move direction is
                local Normal = Vector3.new(Collision.Normal.X, 0, Collision.Normal.Z).Unit
@@ -95,7 +95,7 @@ local function UpdateEntities()
           if Velocity == Vector3.zero then continue end
           Velocity *= DT
 
-          local HorizontalDirection = Vector3.new(Velocity.X, 0, Velocity.Z).Unit
+          local HorizontalDirection = Vector3.new(Velocity.X, 0, Velocity.Z).Unit * -1
           
           CollideAndSlide(EntityID, GetCollider(EntityID), Velocity, HorizontalDirection, 1)
      end
