@@ -41,6 +41,9 @@ return table.freeze({
      ForceVelocity = ZEROVECTOR,
      MoveVelocity = ZEROVECTOR,
      GroundNormal = UPVECTOR,
+     GravityRate = function()
+          return 196.2
+     end,
      LookVector = function()
           return Vector3.new(0, 0, -1)
      end,

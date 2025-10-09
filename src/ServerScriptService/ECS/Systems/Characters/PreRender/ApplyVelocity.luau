@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
-local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local Vector3U = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
@@ -89,11 +88,8 @@ local function CollideAndSlide(EntityID : number, PhysicsCollider : MeshPart?, V
 end
 
 local function UpdateEntities()
-     local DT = Scheduler:getDeltaTime()
-
      for EntityID, Velocity in PlayerVelocities do
           if Velocity == Vector3.zero then continue end
-          Velocity *= DT
 
           local HorizontalDirection = Vector3.new(Velocity.X, 0, Velocity.Z).Unit * -1
           

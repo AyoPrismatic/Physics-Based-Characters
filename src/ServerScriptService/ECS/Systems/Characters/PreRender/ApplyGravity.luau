@@ -23,8 +23,6 @@ local AirTimeComponent = CharacterComponents.List.AirTime
 --Variables
 local CharacterStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 
-local Frequency, Damping, Responsiveness = Interpolator.GenerateParameters(1.5, 0.8, 1.75)
-
 local DownVector = Vector3.new(0, -1, 0)
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
 local AddedLength = 5 -- Prevents wonky clipping
@@ -83,6 +81,8 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
      CharacterFalling(EntityID)
      
      if Collision then
+          Characters:set(EntityID, GroundNormalComponent, Collision.Normal)
+          
           --The distance from the bottom of the collider to the collision point (Y)
           local DistanceToSurface = ColliderPos.Y - Collision.Position.Y - (ColliderSize.Y / 2)
           
@@ -117,55 +117,9 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
           CollideAndSlide(DT, EntityID, PhysicsCollider, ProjectedVector * DT, HorizontalDirection, Depth + 1)
      else
           MovePlayer(PhysicsCollider, Velocity)
+          Characters:set(EntityID, GroundNormalComponent, Vector3.yAxis)
      end
 end
-
---[[
-local function ApplyGravity(DT : number, EntityID : number, PhysicsCollider : MeshPart, AbsoluteY : number, Gravity : number)
-     local ColliderSize = PhysicsCollider.Size
-     local ColliderPivot = PhysicsCollider:GetPivot()
-     local ColliderPos = ColliderPivot.Position
-     local ColliderRadius = (ColliderSize.X + ColliderSize.Z) / 4 -- Averages side lengths and divides by 2
-
-     local RaycastPos = Vector3.new(ColliderPos.X, AbsoluteY, ColliderPos.Z)
-     local GravityMagnitude = Gravity + ColliderSize.Y + FloatHeight
-     local GroundNormal = Vector3.yAxis
-
-     local Collision : RaycastResult? = workspace:Spherecast(
-          RaycastPos,
-          ColliderRadius,
-          DownVector * GravityMagnitude,
-          MakeParams(PhysicsCollider)
-     )
-
-     AbsoluteY = AbsoluteY or GetAbsoluteY(EntityID, AbsoluteY, ColliderPos, ColliderSize, ColliderRadius)
-     
-     if Collision then
-          -- The distance from the bottom of the Collider to the collision point (Y axis)
-          local DistanceToCollision = ColliderPosition.Y + (ColliderRadius * 0.125) - Collision.Position.Y
-          Gravity = 0
-
-          if DistanceToCollision ~= FloatHeight then
-               Gravity = DistanceToCollision - FloatHeight
-          else
-               CharacterLanded(EntityID)
-          end
-
-          GroundNormal = Collision.Normal
-     else
-          CharacterFalling(EntityID)
-     end
-
-     AbsoluteY -= Gravity
-
-     local AbsolutePosition = Vector3.new(ColliderPos.X, AbsoluteY, ColliderPos.Z)
-
-     PhysicsCollider:PivotTo(CFrame.new(AbsolutePosition) * ColliderPivot.Rotation)
-
-     Characters:set(EntityID, GroundNormalComponent, GroundNormal)
-     Characters:set(EntityID, AbsoluteYComponent, AbsoluteY)
-end
---]]
 
 local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()

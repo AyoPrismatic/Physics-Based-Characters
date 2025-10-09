@@ -43,7 +43,7 @@ local function ProccessRequests() : nil
 end
 
 return {
-     name = "Movement Request Processing",
+     name = "LookVector Updates",
      system = ProccessRequests,
      runConditions = table.freeze({
           

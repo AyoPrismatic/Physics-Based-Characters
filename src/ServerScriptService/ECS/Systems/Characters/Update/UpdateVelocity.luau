@@ -25,15 +25,19 @@ local function UpdateVelocity(EntityID : number, AddedForce : Vector3)
 end
 
 local function CalculateVelocities()
+     local DT = Scheduler:getDeltaTime()
+
      for EntityID, MoveVelocity in MovementAppliedEntities do
-          PlayerVelocities[EntityID] = MoveVelocity
+          PlayerVelocities[EntityID] = MoveVelocity * DT
      end
 
      for EntityID, ForceVelocity in ForceAppliedEntities do
-          UpdateVelocity(EntityID, ForceVelocity)
+          UpdateVelocity(EntityID, ForceVelocity * DT)
      end
 
-     ApplyVelocitySystem.UpdateVelocityData(PlayerVelocities)
+     ApplyVelocitySystem.UpdateVelocityData(table.clone(PlayerVelocities))
+
+     table.clear(PlayerVelocities)
 end
 
 return {

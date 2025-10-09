@@ -1,9 +1,7 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
-local ServerStorage = game:GetService('ServerStorage')
 
 --Modules
-local PlayerEntityIDs = require(ServerStorage.Entities.Character.PlayerEntityIDs)
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
@@ -27,7 +25,10 @@ local Keys = table.freeze({
      [Enum.KeyCode.D] = -Vector3.zAxis
 })
 
-local MoveSpeed = 6000
+local MoveSpeed = 30
+local SpeedUpTime = 0.25 -- Takes 0.25s to achieve max speed
+
+SpeedUpTime = math.pow(SpeedUpTime, -1)
 
 local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : HeldKeys, LookVector : Vector3, GroundNormal : Vector3) : nil
      local MoveVector = Vector3.zero
@@ -53,10 +54,13 @@ local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : Held
      local MoveDirection = LookVector * MoveVector.X + RightVector * MoveVector.Z
 
      --The direction made into a tangent line on the surface of the ground
-     local TangentDirection = UVector3.ProjectOnPlane(MoveDirection, GroundNormal)
-     
+     local TangentDirection = UVector3.ProjectOnPlane(MoveDirection, GroundNormal).Unit
+
+     local PreviousMoveVelocity : Vector3 = Characters:get(EntityID, MoveVelocityComponent)
+     local PreviousMagnitude = PreviousMoveVelocity.Magnitude
+
      Characters:set(EntityID, MoveVelocityComponent,
-          TangentDirection * MoveSpeed * DT
+          TangentDirection * math.min(MoveSpeed, PreviousMagnitude + (SpeedUpTime * MoveSpeed * DT))
      )
 end
 
@@ -69,7 +73,7 @@ local function ProccessRequests() : nil
 end
 
 return {
-     name = "Movement Request Processing",
+     name = "Movement Request Handling",
      system = ProccessRequests,
      runConditions = table.freeze({
           

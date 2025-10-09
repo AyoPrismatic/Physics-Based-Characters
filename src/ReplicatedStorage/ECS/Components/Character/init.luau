@@ -42,6 +42,7 @@ local Components = {
      --Gravity Variables
      GravitySpringVelocity = Characters:component() :: Entity<Vector3>, -- The Velocity for a second-order spring system
      GroundNormal = Characters:component() :: Entity<Vector3>, -- The Normal of the collision between the collider and floor
+     GravityRate = Characters:component() :: Entity<number>, -- The Rate that Gravity will increase by each second
      AbsoluteY = Characters:component() :: Entity<number>, -- The Y Position of the character without the spring system
      AirTime = Characters:component() :: Entity<number>,
 

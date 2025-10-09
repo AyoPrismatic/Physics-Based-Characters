@@ -1,7 +1,9 @@
 --Services
 local InputService = game:GetService('UserInputService')
 
-local KeyStates : {Enum.KeyCode} = {
+local KeyStates : {[Enum.KeyCode] : boolean} = {
+     [Enum.KeyCode.Space] = false,
+     
      [Enum.KeyCode.W] = false,
      [Enum.KeyCode.A] = false,
      [Enum.KeyCode.S] = false,
