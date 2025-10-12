@@ -5,8 +5,8 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local AddSystem = require(ReplicatedStorage.ECS.Systems.Characters)
 
 local HookedSystems, ErrorMSG = pcall(function()
-     local Systems = require(script.CollectSystems)
-
+     local Systems = require(script:WaitForChild("CollectSystems"))
+     
      for _, SystemData in Systems do
           AddSystem(SystemData)
      end

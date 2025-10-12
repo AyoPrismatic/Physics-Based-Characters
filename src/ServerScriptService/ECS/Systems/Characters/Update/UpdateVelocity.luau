@@ -1,3 +1,7 @@
+--!optimize 2
+--!native
+--!strict
+
 --Services
 local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
@@ -6,7 +10,6 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 
 --ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 
 local MovementAppliedEntities = CharacterQueries.MovementAppliedEntities
@@ -14,30 +17,25 @@ local ForceAppliedEntities = CharacterQueries.ForceAppliedEntities
 
 --Types
 type EntityID = number
+
+type DecayRate = number
 type Velocity = Vector3
 
 --Variables
 local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.PreRender.ApplyVelocity)
-local PlayerVelocities : {[EntityID] : Velocity} = {}
-
-local function UpdateVelocity(EntityID : number, AddedForce : Vector3)
-     PlayerVelocities[EntityID] += AddedForce
-end
 
 local function CalculateVelocities()
      local DT = Scheduler:getDeltaTime()
-
+     
      for EntityID, MoveVelocity in MovementAppliedEntities do
-          PlayerVelocities[EntityID] = MoveVelocity * DT
+          ApplyVelocitySystem.UpdateVelocityData(EntityID, MoveVelocity * DT)
      end
 
-     for EntityID, ForceVelocity in ForceAppliedEntities do
-          UpdateVelocity(EntityID, ForceVelocity * DT)
+     for EntityID, ForceVelocities : {[string?] : {DecayRate | Velocity}} in ForceAppliedEntities do
+          for _, VelocityData in ForceVelocities do
+               ApplyVelocitySystem.UpdateVelocityData(EntityID, VelocityData[2] * DT)
+          end
      end
-
-     ApplyVelocitySystem.UpdateVelocityData(table.clone(PlayerVelocities))
-
-     table.clear(PlayerVelocities)
 end
 
 return {

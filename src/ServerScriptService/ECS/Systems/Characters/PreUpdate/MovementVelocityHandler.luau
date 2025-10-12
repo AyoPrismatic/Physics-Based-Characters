@@ -1,3 +1,6 @@
+--!optimize 2
+--!native
+
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
@@ -25,12 +28,12 @@ local Keys = table.freeze({
      [Enum.KeyCode.D] = -Vector3.zAxis
 })
 
-local MoveSpeed = 30
-local SpeedUpTime = 0.25 -- Takes 0.25s to achieve max speed
+local MoveSpeed = 33
+local SpeedUpTime = 0.4 -- Takes 0.25s to achieve max speed
 
 SpeedUpTime = math.pow(SpeedUpTime, -1)
 
-local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : HeldKeys, LookVector : Vector3, GroundNormal : Vector3) : nil
+local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : HeldKeys, LookVector : Vector3, GroundNormal : Vector3)
      local MoveVector = Vector3.zero
 
      for KeyCode, UnitVector in Keys do
@@ -64,7 +67,7 @@ local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : Held
      )
 end
 
-local function ProccessRequests() : nil
+local function ProccessRequests()
      local DT = Scheduler:getDeltaTime()
 
      for EntityID, HeldKeys, LookVector, GroundNormal in MovementRequests do

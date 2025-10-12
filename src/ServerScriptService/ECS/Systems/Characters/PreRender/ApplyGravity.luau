@@ -1,24 +1,28 @@
+--!optimize 2
+--!native
+
 --Services
+local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
-local Interpolator = require(ReplicatedStorage.Utils.Interpolator)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
 local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 
 local GravityAppliedEntities = CharacterQueries.GravityAppliedEntities
 
-local SpringVelocityComponent = CharacterComponents.List.GravitySpringVelocity
-local GroundNormalComponent = CharacterComponents.List.GroundNormal
-local PlayerStateComponent = CharacterComponents.List.PlayerState
-local AbsoluteYComponent = CharacterComponents.List.AbsoluteY
-local GravityComponent = CharacterComponents.List.Gravity
-local AirTimeComponent = CharacterComponents.List.AirTime
+local GroundNormalComponent = Components.GroundNormal
+local PlayerStateComponent = Components.PlayerState
+local GravityComponent = Components.Gravity
+local AirTimeComponent = Components.AirTime
+
+--Systems
+local UpdateTravelledVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.Update.UpdateTravelledVelocity)
 
 --Variables
 local CharacterStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
@@ -37,30 +41,25 @@ CharacterCollisionParams.FilterDescendantsInstances = {workspace}
 CharacterCollisionParams.RespectCanCollide = true
 CharacterCollisionParams.CollisionGroup = "Game"
 
-local function CharacterFalling(EntityID : Instance)
-     Characters:set(EntityID, PlayerStateComponent, CharacterStates.Falling)
-end
-
-local function CharacterLanded(EntityID : Instance)
+local function CharacterLanded(EntityID : number)
      Characters:set(EntityID, PlayerStateComponent, CharacterStates.Grounded)
      Characters:set(EntityID, GravityComponent, 0)
      Characters:set(EntityID, AirTimeComponent, 0)
 end
 
-local function MovePlayer(PhysicsCollider : Instance, MoveVector : Vector3)
+local function MovePlayer(EntityID : number, PhysicsCollider : MeshPart, MoveVector : Vector3)
      local CurrentCFrame : CFrame = PhysicsCollider:GetPivot()
+     local NewCFrame = CurrentCFrame + MoveVector
+
+     UpdateTravelledVelocitySystem.UpdateVelocityData(EntityID, MoveVector)
      
-     PhysicsCollider:PivotTo(CurrentCFrame + MoveVector)
+     PhysicsCollider:PivotTo(NewCFrame)
 end
 
 local function ProjectVelocity(LeftoverVelocity : Vector3, SurfaceNormal : Vector3) : Vector3
      local LeftOverVector : Vector3 = UVector3.ProjectOnPlane(LeftoverVelocity, SurfaceNormal).Unit
-
+     
      return LeftOverVector * LeftoverVelocity.Magnitude
-end
-
-local function GetAngle(SurfaceNormal : Vector3) : number
-     return Vector3.yAxis:Angle(SurfaceNormal)
 end
 
 local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider : MeshPart, Velocity : Vector3, HorizontalDirection : Vector3, Depth : number) -- Depth == Recursions
@@ -77,15 +76,12 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
           RayVector,
           CharacterCollisionParams
      )
-
-     CharacterFalling(EntityID)
      
      if Collision then
           Characters:set(EntityID, GroundNormalComponent, Collision.Normal)
           
           --The distance from the bottom of the collider to the collision point (Y)
           local DistanceToSurface = ColliderPos.Y - Collision.Position.Y - (ColliderSize.Y / 2)
-          
           local DistanceToFloatPoint = DistanceToSurface - FloatHeight
 
           if (DistanceToSurface >= FloatHeight - Epsilon) and (DistanceToSurface <= FloatHeight + Epsilon) then
@@ -94,7 +90,7 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
           
           --Due to added length, the distance can be farther than the gravity magnitude
           if DistanceToFloatPoint >= Velocity.Magnitude then
-               MovePlayer(PhysicsCollider, Velocity)
+               MovePlayer(EntityID, PhysicsCollider, Velocity)
                return
           end
 
@@ -103,7 +99,7 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
           
           -- Slope isn't as steep as we want it for it to slide
           if Angle <= MaxSlopeAngle then
-               MovePlayer(PhysicsCollider, VectorToGoal)
+               MovePlayer(EntityID, PhysicsCollider, VectorToGoal)
                return
           end
           
@@ -116,7 +112,7 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
 
           CollideAndSlide(DT, EntityID, PhysicsCollider, ProjectedVector * DT, HorizontalDirection, Depth + 1)
      else
-          MovePlayer(PhysicsCollider, Velocity)
+          MovePlayer(EntityID, PhysicsCollider, Velocity)
           Characters:set(EntityID, GroundNormalComponent, Vector3.yAxis)
      end
 end
@@ -124,7 +120,10 @@ end
 local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
-     for EntityID, PhysicsCollider, Gravity in GravityAppliedEntities do
+     for EntityID : number, PhysicsCollider : MeshPart, Gravity : number in GravityAppliedEntities do
+          local PlayerState = Characters:get(EntityID, PlayerStateComponent)
+          if PlayerState ~= CharacterStates.Falling then continue end
+
           CollideAndSlide(DT, EntityID, PhysicsCollider, DownVector * (Gravity * DT), Vector3.new(0,0,0), 1)
      end
 end

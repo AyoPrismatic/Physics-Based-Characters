@@ -1,3 +1,7 @@
+--!optimize 2
+--!native
+--!strict
+
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
@@ -10,46 +14,45 @@ local PhysicsCollidersFolder : Folder = workspace.Colliders.PlayerCharacter.Phys
 
 local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 
-local function ZEROVECTOR()
+local function ZeroVector()
      return Vector3.zero
 end
 
-local function UPVECTOR()
+local function UpVector()
      return Vector3.yAxis
 end
 
-local function ZERO()
+local function Zero()
      return 0
 end
 
 return table.freeze({
      PhysicsCollider = function(_, EntityID : number)
-          local PhysicsCollider = PlayerPhysicsCollider:Clone()
-          PhysicsCollider.Parent = PhysicsCollidersFolder
-          PhysicsCollider:PivotTo(PlayerSpawnPoint)
+          local Collider = PlayerPhysicsCollider:Clone()
+          Collider.Parent = PhysicsCollidersFolder
+          Collider:PivotTo(PlayerSpawnPoint + (Vector3.new(1, 1, 1) * math.random(-8, 8)))
 
-          PhysicsCollider.Name = EntityID
-
-          return PhysicsCollider
+          Collider.Name = tostring(EntityID)
+          
+          return Collider
      end,
 
-     Position = function()
-          return PlayerSpawnPoint
+     GravitySpringVelocity = ZeroVector,
+     TravelledVelocity = ZeroVector,
+     ForceVelocities = function()
+          return {}
      end,
-
-     GravitySpringVelocity = ZEROVECTOR,
-     ForceVelocity = ZEROVECTOR,
-     MoveVelocity = ZEROVECTOR,
-     GroundNormal = UPVECTOR,
+     MoveVelocity = ZeroVector,
+     GroundNormal = UpVector,
      GravityRate = function()
           return 196.2
      end,
      LookVector = function()
-          return Vector3.new(0, 0, -1)
+          return Vector3.zAxis * -1
      end,
      
-     Gravity = ZERO,
-     AirTime = ZERO,
+     Gravity = Zero,
+     AirTime = Zero,
 
      HeldKeys = function()
           return {

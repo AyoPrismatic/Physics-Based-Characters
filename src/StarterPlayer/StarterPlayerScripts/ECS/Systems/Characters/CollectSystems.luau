@@ -54,4 +54,4 @@ for _, PhaseFolder : Folder in SystemsFolder:GetChildren() do
      end
 end
 
-return if #Systems > 0 then Systems else nil
+return Systems

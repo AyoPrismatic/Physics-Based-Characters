@@ -1,3 +1,6 @@
+--!optimize 2
+--!native
+
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local ServerStorage = game:GetService('ServerStorage')
@@ -8,7 +11,7 @@ local Collect = require(ReplicatedStorage.Utils.Collect)
 
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
-local WASD_InputEvent : RemoteEvent = CharacterEvents.Input.WASDMovement
+local WASD_InputEvent : UnreliableRemoteEvent = CharacterEvents.Input.WASDMovement
 
 --ECS
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
@@ -35,6 +38,7 @@ local function HandleRequest(Player : Player, WASDRequest : buffer?) : nil
      if buffer.len(WASDRequest) > 1 then return end
 
      local CharacterEntityID = PlayerEntityIDs.GetID(Player)
+
      local HeldKeys = Characters:get(CharacterEntityID, HeldKeysComponent) :: HeldKeys
 
      for i : number, Key : Enum.KeyCode in Keys do

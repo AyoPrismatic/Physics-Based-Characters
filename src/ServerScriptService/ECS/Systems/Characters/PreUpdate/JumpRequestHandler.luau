@@ -15,31 +15,36 @@ local JumpRequest : RemoteEvent = CharacterEvents.Input.Jump
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local ForceVelocityComponent = CharacterComponents.List.ForceVelocity
+local ForceVelocitiesComponent = CharacterComponents.List.ForceVelocities
 
 --Variables
 local Requests = Collect(JumpRequest.OnServerEvent)
 local Debounces : {[Player] : number} = {}
-
-local JumpVelocity = 100
 local DebounceTime = 0.25
 
+local JumpVelocity = 150
+local JumpVelocityDecay = 5
+
+local function DebouncePlayer(Player : Player)
+     Debounces[Player] = true
+     
+     task.wait(DebounceTime)
+     
+     Debounces[Player] = false
+end
+
 local function ProcessJumpRequest(DT : number, Player : Player)
-     if Debounces[Player] then
-          local NewDebounceTime = Debounces[Player] - DT
-          if NewDebounceTime <= 0 then
-               Debounces[Player] = nil
-          end
-     end
+     if Debounces[Player] then return end
      
      local EntityID = PlayerEntityIDs.GetID(Player)
-     local CurrentVelocity = Characters:get(EntityID, ForceVelocityComponent)
-
-     Characters:set(EntityID, ForceVelocityComponent,
-          CurrentVelocity + Vector3.new(0, JumpVelocity, 0)
+     local ForceVelocities = Characters:get(EntityID, ForceVelocitiesComponent)
+     
+     ForceVelocities["Jump"] = {JumpVelocityDecay, Vector3.new(0, JumpVelocity, 0)}
+     Characters:set(EntityID, ForceVelocitiesComponent,
+          ForceVelocities
      )
-
-     Debounces[Player] = DebounceTime
+     
+     task.spawn(DebouncePlayer, Player)
 end
 
 local function ProcessRequests()

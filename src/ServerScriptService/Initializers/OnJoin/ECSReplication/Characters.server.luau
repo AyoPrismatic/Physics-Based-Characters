@@ -2,6 +2,9 @@
 local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
+--Packages
+local Jabby = require(ReplicatedStorage.Packages.Jabby)
+
 --Modules
 local Replicator = require(ServerScriptService.ECS.Replicators.Characters)
 

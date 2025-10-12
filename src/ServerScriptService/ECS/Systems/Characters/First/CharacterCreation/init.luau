@@ -1,3 +1,6 @@
+--!optimize 2
+--!native
+
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local ServerStorage = game:GetService('ServerStorage')
@@ -36,25 +39,23 @@ end
 
 local function OnPlayerAdded(Player : Player)
      local EntityID = Characters:entity()
-     Characters:add(EntityID, Replecs.Networked)
 
      for ComponentName, ComponentID in CharacterComponents.List do
           local ReplicationType = CharacterComponents.SharedComponents[ComponentID]
-          local InitalizeFunction = ComponentInitializers[ComponentName]
-
-          if InitalizeFunction then
-               local Successful, ComponentValue = pcall(InitalizeFunction, Player, EntityID)
+          local Value = ComponentInitializers[ComponentName]
+          
+          if type(Value) == "function" then
+               local Successful, Value = pcall(Value, Player, EntityID)
                if Successful ~= true then
-                    local ErrorMSG = ComponentValue
                     warn(`\n Failed to create Component:`..
                          `\n Name: {ComponentName}` ..
-                         `\n Reason: {ErrorMSG}`)
+                         `\n Reason: {Value}`)
                     continue
                end
 
-               AddComponent(EntityID, ComponentID, ComponentValue)
+               AddComponent(EntityID, ComponentID, Value)
           else
-               AddComponent(EntityID, ComponentID)
+               AddComponent(EntityID, ComponentID, Value)
           end
 
           ReplicateComponent(EntityID, ComponentID, ReplicationType)
@@ -66,6 +67,8 @@ local function OnPlayerAdded(Player : Player)
           `\n Created Player Character:`..
           `\n Player Name: {Player.Name}`
      )
+
+     Characters:add(EntityID, Replecs.Networked)
 end
 
 local function ProcessPlayers()

@@ -1,5 +1,6 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local RunService = game:GetService('RunService')
 
 --Packages
 local Replecs = require(ReplicatedStorage.Packages.Replecs)
@@ -17,15 +18,17 @@ type Entity<T> = Jecs.Entity<T>
 type EntityIndex = number
 type ComponentIndex = number
 
+type DecayRate = number
+type Velocity = Vector3
+
 --Component Types (made for other scripts to use)
+export type ForceVelocities = Entity<{[string] : {DecayRate | Velocity}}>
 export type HeldKeys = Entity<{[Enum.KeyCode] : boolean}>
-export type GravitySpringVelocity = Entity<Vector3>
+export type TravelledVelocity = Entity<Vector3>
 export type PhysicsCollider = Entity<Instance>
-export type ForceVelocity = Entity<Vector3>
 export type MoveVelocity = Entity<Vector3>
 export type GroundNormal = Entity<Vector3>
 export type LookVector = Entity<Vector3>
-export type AbsoluteY = Entity<number>
 export type Gravity = Entity<number>
 export type AirTime = Entity<number>
 
@@ -35,16 +38,17 @@ local Components = {
      PhysicsCollider = Characters:component() :: Entity<Instance>,
 
      --Forces
-     ForceVelocity = Characters:component() :: Entity<Vector3>, -- Externally Based Velocity
+     ForceVelocities = Characters:component() :: Entity<{[string] : {DecayRate | Velocity}}>, -- Externally Based Velocity
      MoveVelocity = Characters:component() :: Entity<Vector3>, -- Player Input Based Velocity
      Gravity = Characters:component() :: Entity<number>,
 
      --Gravity Variables
-     GravitySpringVelocity = Characters:component() :: Entity<Vector3>, -- The Velocity for a second-order spring system
      GroundNormal = Characters:component() :: Entity<Vector3>, -- The Normal of the collision between the collider and floor
      GravityRate = Characters:component() :: Entity<number>, -- The Rate that Gravity will increase by each second
-     AbsoluteY = Characters:component() :: Entity<number>, -- The Y Position of the character without the spring system
      AirTime = Characters:component() :: Entity<number>,
+
+     --Visual
+     TravelledVelocity = Characters:component() :: Entity<Vector3>, -- The velocity the client should use for spring physics
 
      --Limiting variables
      MaxTotalVelocity = Characters:component() :: Entity<number>,
@@ -62,12 +66,13 @@ local Components = {
 }
 
 local SharedComponents = {
-     [Components.ForceVelocity] = UNRELIABLE,
+     [Components.TravelledVelocity] = UNRELIABLE,
+     [Components.ForceVelocities] = UNRELIABLE,
      [Components.MoveVelocity] = UNRELIABLE,
      [Components.Gravity] = UNRELIABLE,
      [Components.AirTime] = UNRELIABLE,
      
-     [Components.PlayerState] = RELIABLE,
+     [Components.PlayerState] = UNRELIABLE,
      [Components.Player] = RELIABLE,
      [Components.Name] = RELIABLE
 }
@@ -130,6 +135,10 @@ local function SetComponents(EntityID : EntityIndex, ComponentData : {[Component
      end
 end
 
+--[[Ser / Des]]
+local ComponentSerialization = require(script.ComponentSerialization)
+ComponentSerialization.Setup(Components)
+
 --[[Jabby]]
 local JabbyRegistered, ErrorMSG = pcall(Jabby.register, {
      name = "Characters",
@@ -141,6 +150,16 @@ local JabbyRegistered, ErrorMSG = pcall(Jabby.register, {
 
 if JabbyRegistered ~= true then
      warn(`Jabby Failed to register for {script.Name} because {ErrorMSG}`)
+else
+     Jabby.set_check_function(function(Player : Player)
+          return true
+     end)
+end
+
+--[[Client]]
+if RunService:IsClient() then
+     local ClientComponents = require(script.ClientSetup)
+     ClientComponents.Setup(Components)
 end
 
 return table.freeze({

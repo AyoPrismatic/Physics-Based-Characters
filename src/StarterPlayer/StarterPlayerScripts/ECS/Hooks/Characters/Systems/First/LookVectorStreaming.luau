@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
-local PhysicsColliderLoaded : BindableEvent = CharacterEvents.Client.PhysicsColliderLoaded
+local ClientLoaded : BindableEvent = CharacterEvents.Client.ClientLoaded
 local LookVectorUpdate : RemoteEvent = CharacterEvents.Input.LookVector
 
 local function UpdateLookVector()
@@ -19,7 +19,7 @@ local function UpdateLookVector()
 end
 
 return table.freeze({
-     Event = PhysicsColliderLoaded.Event,
+     Event = ClientLoaded.Event,
 
      SystemData = {
           name = "LookVector Streaming",

@@ -1,3 +1,6 @@
+--!optimize 2
+--!native
+
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local ServerStorage = game:GetService('ServerStorage')
@@ -8,7 +11,7 @@ local Collect = require(ReplicatedStorage.Utils.Collect)
 
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
-local LookVectorUpdate : RemoteEvent = CharacterEvents.Input.LookVector
+local LookVectorUpdate : UnreliableRemoteEvent = CharacterEvents.Input.LookVector
 
 --ECS
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)

@@ -12,21 +12,26 @@ local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 export type Entity<T> = Jecs.Entity<T>
 
 --Component Types  (made for other scripts to use)
-export type Example = Entity<any>
+export type RootPart = Entity<Instance | BasePart>
+export type SpringVelocity = Entity<Vector3>
+export type SpringResponsiveness = Entity<number>
+export type SpringFrequency = Entity<number>
+export type SpringDamping = Entity<number>
+
 
 --[[Components]]
 local Components = {
-     --Example = Characters:component() :: Entity<any>,
+     RootPart = Characters:component() :: Entity<Instance | BasePart>,
+
+     --Spring System Variables
+     SpringVelocity = Characters:component() :: Entity<number>,
+     SpringResponsiveness = Characters:component() :: Entity<number>,
+     SpringFrequency = Characters:component() :: Entity<number>,
+     SpringDamping = Characters:component() :: Entity<number>,
 }
 
-local function Setup(CubeComponents)
-     local GlobalComponents = CubeComponents.List
-     
+local function Setup(GlobalComponents)
      for ComponentName, ComponentID in Components do
-          if GlobalComponents[ComponentName] then
-               error(`Conflicting Component Names found: {ComponentName}`)
-          end
-
           Characters:set(ComponentID, Jecs.Name, tostring(ComponentName))
           GlobalComponents[ComponentName] = ComponentID
      end

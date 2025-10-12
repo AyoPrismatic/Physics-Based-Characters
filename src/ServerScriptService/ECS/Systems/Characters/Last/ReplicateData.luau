@@ -1,3 +1,7 @@
+--!optimize 2
+--!native
+--!strict
+
 --Services
 local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
@@ -9,7 +13,7 @@ local Interval = require(ReplicatedStorage.Utils.Interval)
 
 --Events
 local ReplecEvents = ReplicatedStorage.Events.REPLECS
-local RequestUnreliable : RemoteEvent = ReplecEvents.RequestUnreliable
+local RequestUnreliable : UnreliableRemoteEvent = ReplecEvents.RequestUnreliable
 local RequestReliable : RemoteEvent = ReplecEvents.RequestReliable
 
 --Variables

@@ -13,7 +13,7 @@ local HeldKeys = require(PlayerScripts.Data.Input.HeldKeys)
 
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
-local PhysicsColliderLoaded : BindableEvent = CharacterEvents.Client.PhysicsColliderLoaded
+local ClientLoaded : BindableEvent = CharacterEvents.Client.ClientLoaded
 local JumpRequest : RemoteEvent = CharacterEvents.Input.Jump
 
 --Variables
@@ -27,16 +27,14 @@ local function CheckInput() : nil
           return
      end
      
-     if HeldKeys.IsKeyDown(JumpKey) ~= true then
-          return
+     if HeldKeys.IsKeyDown(JumpKey) == true then
+          JumpRequest:FireServer()
+          JumpDebounce = Debounce
      end
-     
-     JumpRequest:FireServer()
-     JumpDebounce = Debounce
 end
 
 return table.freeze({
-     Event = PhysicsColliderLoaded.Event,
+     Event = ClientLoaded.Event,
 
      SystemData = {
           name = "Jump Requests",

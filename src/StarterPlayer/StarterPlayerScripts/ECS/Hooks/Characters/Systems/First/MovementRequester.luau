@@ -11,7 +11,7 @@ local HeldKeys = require(PlayerScripts.Data.Input.HeldKeys)
 
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
-local PhysicsColliderLoaded : BindableEvent = CharacterEvents.Client.PhysicsColliderLoaded
+local ClientLoaded : BindableEvent = CharacterEvents.Client.ClientLoaded
 local WASD_InputEvent : RemoteEvent = CharacterEvents.Input.WASDMovement
 
 local Keys = table.freeze({
@@ -45,7 +45,7 @@ local function ProccessInput()
 end
 
 return table.freeze({
-     Event = PhysicsColliderLoaded.Event,
+     Event = ClientLoaded.Event,
 
      SystemData = {
           name = "Movement Requesting",
