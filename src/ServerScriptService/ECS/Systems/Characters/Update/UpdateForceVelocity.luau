@@ -19,10 +19,12 @@ type Velocity = Vector3
 type ForceVelocities = {[number | string?] : {DecayRate | Velocity}}
 
 --Variables
-local Epsilon = 5
+local Epsilon = 1
 
 local function DecayVelocity(DT : number, EntityID : number, VelocityIndex : number | string?, ForceVelocities : ForceVelocities, DecayRate : number, ForceVelocity : Vector3)
-     ForceVelocity *= math.exp(-DecayRate * DT)
+     if DecayRate ~= 0 then
+          ForceVelocity *= math.exp(-DecayRate * DT)
+     end
 
      if ForceVelocity.Magnitude < Epsilon then
           ForceVelocities[VelocityIndex] = nil

@@ -40,9 +40,6 @@ local function ProcessJumpRequest(DT : number, Player : Player)
      local ForceVelocities = Characters:get(EntityID, ForceVelocitiesComponent)
      
      ForceVelocities["Jump"] = {JumpVelocityDecay, Vector3.new(0, JumpVelocity, 0)}
-     Characters:set(EntityID, ForceVelocitiesComponent,
-          ForceVelocities
-     )
      
      task.spawn(DebouncePlayer, Player)
 end

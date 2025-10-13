@@ -40,7 +40,12 @@ return table.freeze({
      GravitySpringVelocity = ZeroVector,
      TravelledVelocity = ZeroVector,
      ForceVelocities = function()
-          return {}
+          return {
+               ["X"] = {0, Vector3.xAxis},
+               ["-X"] = {0, Vector3.xAxis * -1},
+               ["Z"] = {0, Vector3.zAxis},
+               ["-Z"] = {0, Vector3.zAxis * -1},
+          }
      end,
      MoveVelocity = ZeroVector,
      GroundNormal = UpVector,

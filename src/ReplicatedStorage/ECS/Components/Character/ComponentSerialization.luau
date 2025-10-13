@@ -17,9 +17,11 @@ local GetCursor = Squash.frombuffer
 local NewCursor = Squash.cursor
 local NewBuffer = Squash.tobuffer
 local NewRecord = Squash.record
+local Optional = Squash.opt
 local Type = Squash.T
 
---Squash 
+--Squash
+local Number = Squash.number(8)
 local Table = Squash.table
 local Float = Squash.number(4)
 local Vect3 = Squash.Vector3
@@ -30,7 +32,7 @@ local Map = Squash.map
 
 --Squash Records / Maps
 local ForceVelocitiesMap = Map(
-     Str(), Table {
+     Optional(Str()), Table {
           number = Uint(1),
           Vector3 = Vect3(Float)
      }
