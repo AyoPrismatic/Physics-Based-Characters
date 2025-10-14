@@ -1,8 +1,14 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
+--Modules
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
+
+--Variables
+local ColliderRadius = Global.PlayerCharacterRadius
+
 return table.freeze({
-     RootPart = function(_, EntityID : number, ColliderRadius : number)
+     RootPart = function(_, EntityID : number)
           local Collider = Instance.new("Part")
           
           Collider.Size = Vector3.one * ColliderRadius * 2

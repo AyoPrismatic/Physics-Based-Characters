@@ -36,7 +36,6 @@ export type AirTime = Entity<number>
 --[[Components]]
 local Components = {
      --Colliders
-     PhysicsColliderRadius = Characters:component() :: Entity<number>,
      Position = Characters:component() :: Entity<Vector3Value>,
 
      --Forces
@@ -49,11 +48,6 @@ local Components = {
      GravityRate = Characters:component() :: Entity<number>, -- The Rate that Gravity will increase by each second
      AirTime = Characters:component() :: Entity<number>,
 
-     --Limiting variables
-     MaxTotalVelocity = Characters:component() :: Entity<number>,
-     MaxMoveVelocity = Characters:component() :: Entity<Vector3>,
-     MaxGravity = Characters:component() :: Entity<number>,
-
      --Player Input Data
      HeldKeys = Characters:component() :: Entity<{[Enum.KeyCode] : boolean}>,
      LookVector = Characters:component() :: Entity<Vector3>,
@@ -65,8 +59,7 @@ local Components = {
 }
 
 local SharedComponents = {
-     [Components.PhysicsColliderRadius] = RELIABLE,
-     [Components.Position] = RELIABLE,
+     [Components.Position] = RELIABLE, -- The instance gets sent from Replecs but roblox's replication handles updating the client's position
      
      [Components.Player] = RELIABLE,
      [Components.Name] = RELIABLE

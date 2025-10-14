@@ -2,7 +2,6 @@
 --!native
 
 --Services
-local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
@@ -10,21 +9,22 @@ local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
-local Components = require(ReplicatedStorage.ECS.Components.Character).List
-local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
 
+local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
+
+local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local GravityAppliedEntities = CharacterQueries.GravityAppliedEntities
 
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
 local GroundNormalComponent = Components.GroundNormal
 local PlayerStateComponent = Components.PlayerState
 local GravityComponent = Components.Gravity
 local AirTimeComponent = Components.AirTime
 
 --Variables
-local CharacterStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
-
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
+local Radius = Global.PlayerCharacterRadius
 local AddedRayLength = 5
 local FloatHeight = 1.35
 local MaxBounces = 3
@@ -44,7 +44,7 @@ local function ProjectVelocity(LeftoverVelocity : Vector3, SurfaceNormal : Vecto
      ).Unit
 end
 
-local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Radius : number, Velocity : Vector3, Direction : Vector3, Recursions : number) : Vector3
+local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Velocity : Vector3, Direction : Vector3, Recursions : number) : Vector3
      if Recursions >= MaxBounces then return Vector3.zero end
 
      local RayVector = Direction * (Velocity.Magnitude + AddedRayLength)
@@ -65,7 +65,7 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
 
           if (DistanceToSurface >= FloatHeight - Epsilon) and (DistanceToSurface <= FloatHeight + Epsilon) then
                --Character Landed
-               Characters:set(EntityID, PlayerStateComponent, CharacterStates.Grounded)
+               Characters:set(EntityID, PlayerStateComponent, Global.PlayerStates.Grounded)
                Characters:set(EntityID, GravityComponent, 0)
                Characters:set(EntityID, AirTimeComponent, 0)
           end
@@ -93,7 +93,7 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
 
           ProjectedVelocity *= DT
 
-          return VectorToGoal + CollideAndSlide(DT, EntityID, Position, Radius, ProjectedVelocity, ProjectedVelocity.Unit, Recursions + 1)
+          return VectorToGoal + CollideAndSlide(DT, EntityID, Position, ProjectedVelocity, ProjectedVelocity.Unit, Recursions + 1)
      else
           Characters:set(EntityID, GroundNormalComponent, Vector3.yAxis)
           return Velocity
@@ -103,13 +103,13 @@ end
 local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
-     for EntityID : number, Position : Vector3Value, Radius : number, Gravity : number in GravityAppliedEntities do
+     for EntityID : number, Position : Vector3Value, Gravity : number in GravityAppliedEntities do
           local PlayerState = Characters:get(EntityID, PlayerStateComponent)
-          if PlayerState ~= CharacterStates.Falling then continue end
+          if PlayerState ~= Global.PlayerStates.Falling then continue end
 
           local Velocity = -Vector3.yAxis * (Gravity * DT)
 
-          Position.Value += CollideAndSlide(DT, EntityID, Position.Value, Radius, Velocity, -Vector3.yAxis, 1)
+          Position.Value += CollideAndSlide(DT, EntityID, Position.Value, Velocity, -Vector3.yAxis, 1)
      end
 end
 

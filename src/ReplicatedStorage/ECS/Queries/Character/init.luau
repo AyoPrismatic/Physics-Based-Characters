@@ -11,7 +11,6 @@ local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 local Components = CharacterComponents.List
 
-local PhysicsColliderRadius = Components.PhysicsColliderRadius
 local ForceVelocities = Components.ForceVelocities
 local MoveVelocity = Components.MoveVelocity
 local GroundNormal = Components.GroundNormal
@@ -32,10 +31,9 @@ return --[[Queries]] table.freeze {
           Player
      )},
 
-     PositionUpdates = Characters:query(Position, PhysicsColliderRadius):cached() :: {(
+     PositionUpdates = Characters:query(Position):cached() :: {(
           EntityID |
-          Component.Position |
-          Component.PhysicsColliderRadius
+          Component.Position 
      )},
 
      MovementRequests = Characters:query(HeldKeys, LookVector, GroundNormal):with(Position, MoveVelocity):cached() :: {(
@@ -50,10 +48,9 @@ return --[[Queries]] table.freeze {
           Component.AirTime
      )},
 
-     GravityAppliedEntities = Characters:query(Position, PhysicsColliderRadius, Gravity):cached() :: {(
+     GravityAppliedEntities = Characters:query(Position, Gravity):cached() :: {(
           EntityID |
           Component.Position |
-          Component.PhysicsColliderRadius |
           Component.Gravity
      )},
 

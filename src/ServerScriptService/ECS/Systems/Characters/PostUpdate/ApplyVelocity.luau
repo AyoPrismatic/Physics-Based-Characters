@@ -2,7 +2,6 @@
 --!native
 
 --Services
-local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
@@ -10,12 +9,13 @@ local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
 
-local RadiusComponent = CharacterComponents.List.PhysicsColliderRadius
-local PlayerStateComponent = CharacterComponents.List.PlayerState
-local PositionComponent = CharacterComponents.List.Position
+local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
+
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
+local PlayerStateComponent = Components.PlayerState
+local PositionComponent = Components.Position
 
 --Types
 type EntityID = number
@@ -23,10 +23,10 @@ type Velocity = Vector3
 type PlayerVelocities = {[EntityID] : Velocity}
 
 --Variables
-local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 local PlayerVelocities : {[EntityID] : {Velocity}} = {}
 
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
+local Radius = Global.PlayerCharacterRadius
 local AddedRayLength = 5
 local SkinWidth = 0.25
 local MaxDepth = 3
@@ -56,7 +56,7 @@ local function HorizontalDir(Velocity : Vector3) : Vector3
 end
 
 --Returns the Vector travelledc
-local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Radius : number, Velocity : Vector3, Direction : Vector3, HorizontalDirection : Vector3, Recursions : number) : Vector3
+local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Velocity : Vector3, Direction : Vector3, HorizontalDirection : Vector3, Recursions : number) : Vector3
      if Velocity ~= Velocity or Velocity == Vector3.zero then return Vector3.zero end -- Components are NaN
      if Recursions >= MaxDepth then return Vector3.zero end
      
@@ -98,7 +98,7 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
                
                local PlayerState = Characters:get(EntityID, PlayerStateComponent)
 
-               if PlayerState == PlayerStates.Grounded then
+               if PlayerState == Global.PlayerStates.Grounded then
                     ProjectedVector = ProjectVelocity(
                          Vector3.new(RemainingVelocity.X, 0, RemainingVelocity.Z), -- Remaining velocity from collision
                          Normal
@@ -112,7 +112,7 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
 
           local NewPosition = Position + VectorToGoal
           
-          return VectorToGoal + CollideAndSlide(DT, EntityID, NewPosition, Radius, ProjectedVector, ProjectedVector.Unit, HorizontalDirection, Recursions + 1)
+          return VectorToGoal + CollideAndSlide(DT, EntityID, NewPosition, ProjectedVector, ProjectedVector.Unit, HorizontalDirection, Recursions + 1)
      else
           return Velocity
      end
@@ -123,7 +123,6 @@ local function UpdateEntities()
 
      for EntityID, Velocities in PlayerVelocities do
           local Position : Vector3Value = Characters:get(EntityID, PositionComponent)
-          local Radius : number = Characters:get(EntityID, RadiusComponent)
 
           local TransformationVector = Vector3.zero
 
@@ -133,7 +132,7 @@ local function UpdateEntities()
                local HorizontalDirection = HorizontalDir(Velocity)
                local RayPosition = Position.Value + TransformationVector
                
-               TransformationVector += CollideAndSlide(DT, EntityID, RayPosition, Radius, Velocity, Velocity.Unit, HorizontalDirection, 1)
+               TransformationVector += CollideAndSlide(DT, EntityID, RayPosition, Velocity, Velocity.Unit, HorizontalDirection, 1)
           end
 
           Position.Value += TransformationVector

@@ -39,17 +39,16 @@ local function AddComponent(EntityID : number, ComponentID : number, ComponentVa
      end
 end
 
-local function SetupEntity(EntityID : number, EntityPlayer : Player?, Radius : number?)
+local function SetupEntity(EntityID : number, EntityPlayer : Player?)
      if EntityIDsDataTable.GetPlayer(EntityID) then return end -- <- already set up
 
      EntityPlayer = Player or Characters:get(EntityID, PlayerComponent)
-     Radius = Radius or Characters:get(EntityID, RadiusComponent)
 
      for ComponentName, ComponentID in ClientCharacterComponents.List do
           local Value = ComponentInitializers[ComponentName]
 
           if type(Value) == "function" then
-               local Successful, Value = pcall(Value, EntityPlayer, EntityID, Radius)
+               local Successful, Value = pcall(Value, EntityPlayer, EntityID)
                if Successful ~= true then
                     warn(`\n Failed to create Component:`..
                          `\n Name: {ComponentName}` ..
@@ -78,7 +77,7 @@ Replicator:added(function(EntityID)
 end)
 
 RecievedFull.Event:Once(function()
-     for EntityID : number, Player : Player, Radius : number in Characters:query(PlayerComponent, RadiusComponent) do
-          SetupEntity(EntityID, Player, Radius)
+     for EntityID : number, EntityPlayer : Player in Characters:query(PlayerComponent) do
+          SetupEntity(EntityID, EntityPlayer)
      end
 end)

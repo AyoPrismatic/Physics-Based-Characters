@@ -19,7 +19,7 @@ type Velocity = Vector3
 type ForceVelocities = {[number | string?] : {DecayRate | Velocity}}
 
 --Variables
-local Epsilon = 1
+local Epsilon = 5
 
 local function DecayVelocity(DT : number, EntityID : number, VelocityIndex : number | string?, ForceVelocities : ForceVelocities, DecayRate : number, ForceVelocity : Vector3)
      if DecayRate ~= 0 then

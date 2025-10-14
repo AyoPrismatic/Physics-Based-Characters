@@ -5,14 +5,12 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
+--ECS
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
+
 --Variables
 local PlayerSpawnPointPart : BasePart = workspace.SpawnPoint
 local PlayerSpawnPoint = PlayerSpawnPointPart:GetPivot().Position
-
-local PlayerPhysicsCollider : BasePart = ReplicatedStorage.Colliders.Player.PhysicsCollider
-local PhysicsCollidersFolder : Folder = workspace.Colliders.PlayerCharacter.Physics
-
-local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
 
 local function ZeroVector()
      return Vector3.zero
@@ -27,20 +25,15 @@ local function Zero()
 end
 
 return table.freeze({
-     PhysicsColliderRadius = function()
-          local Size = PlayerPhysicsCollider.Size
-          return (Size.X + Size.Z) / 4
-     end,
-
      GravitySpringVelocity = ZeroVector,
      TravelledVelocity = ZeroVector,
      ForceVelocities = function()
-          return {}--[[{
-               ["X"] = {0, Vector3.xAxis},
-               ["-X"] = {0, Vector3.xAxis * -1},
-               ["Z"] = {0, Vector3.zAxis},
-               ["-Z"] = {0, Vector3.zAxis * -1},
-          }--]]
+          return {
+               ["X"] = {0, Vector3.xAxis * 6},
+               ["-X"] = {0, Vector3.xAxis * -6},
+               ["Z"] = {0, Vector3.zAxis * 6},
+               ["-Z"] = {0, Vector3.zAxis * -6},
+          }
      end,
      MoveVelocity = ZeroVector,
      Position = function(_, EntityID)
@@ -74,7 +67,7 @@ return table.freeze({
      end,
 
      PlayerState = function()
-          return PlayerStates.Falling
+          return Global.PlayerStates.Falling
      end,
 
      Player = function(Player : Player)

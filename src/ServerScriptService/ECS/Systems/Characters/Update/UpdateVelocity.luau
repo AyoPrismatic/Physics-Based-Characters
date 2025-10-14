@@ -22,7 +22,7 @@ type DecayRate = number
 type Velocity = Vector3
 
 --Variables
-local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.PreRender.ApplyVelocity)
+local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.PostUpdate.ApplyVelocity)
 
 local function CalculateVelocities()
      local DT = Scheduler:getDeltaTime()

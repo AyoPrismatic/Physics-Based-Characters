@@ -9,24 +9,22 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 
 --ECS
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 
+local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local GravityUpdates = CharacterQueries.GravityUpdates
 
-local PlayerStateComponent = CharacterComponents.List.PlayerState
-local AirTimeComponent = CharacterComponents.List.AirTime
-local GravityComponent = CharacterComponents.List.Gravity
-
---Variables
-local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
+local PlayerStateComponent = Components.PlayerState
+local AirTimeComponent = Components.AirTime
+local GravityComponent = Components.Gravity
 
 --Constants
 local GRAVITYRATE = 196.2
 
 local function IsFalling(EntityID : number) : boolean
-     return Characters:get(EntityID, PlayerStateComponent) == PlayerStates.Falling
+     return Characters:get(EntityID, PlayerStateComponent) == Global.PlayerStates.Falling
 end
 
 local function UpdateGravity(DT : number, EntityID : number, AirTime : number)

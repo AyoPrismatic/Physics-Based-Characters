@@ -6,9 +6,9 @@
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
+local Global = require(ReplicatedStorage.ECS.Globals.Character)
 
-local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.PlayerStates)
+local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 local PlayerStateComponent = CharacterComponents.List.PlayerState
@@ -19,8 +19,9 @@ local PositionUpdates = CharacterQueries.PositionUpdates
 --Variables
 local DownVector = -Vector3.yAxis
 
+local Radius = Global.PlayerCharacterRadius
 local FloatHeight = 1.35
-local Epsilon = 0.12
+local Epsilon = 0.2
 
 DownVector *= FloatHeight + Epsilon
 
@@ -31,7 +32,7 @@ Params.FilterDescendantsInstances = {workspace}
 Params.RespectCanCollide = true
 Params.CollisionGroup = "Game"
 
-local function ProcessCollider(EntityID : number, Position : Vector3, Radius : number)
+local function ProcessCollider(EntityID : number, Position : Vector3)
      local RaycastPos = Vector3.new(Position.X, Position.Y - Radius, Position.Z) -- (Position.Y - Radius) = Bottom of Collider
 
      local Collision : RaycastResult? = workspace:Raycast(
@@ -42,17 +43,17 @@ local function ProcessCollider(EntityID : number, Position : Vector3, Radius : n
      
      if Collision == nil or Collision.Distance < (FloatHeight - Epsilon) then
           Characters:set(EntityID, PlayerStateComponent,
-               PlayerStates.Falling
+               Global.PlayerStates.Falling
           )
      end
 end
 
 local function GetColliders()
-     for EntityID : number, Position : Vector3Value, Radius : number in PositionUpdates do
+     for EntityID : number, Position : Vector3Value in PositionUpdates do
           local PlayerState = Characters:get(EntityID, PlayerStateComponent)
-          if PlayerState == PlayerStates.Falling then continue end
+          if PlayerState == Global.PlayerStates.Falling then continue end
 
-          ProcessCollider(EntityID, Position.Value, Radius)
+          ProcessCollider(EntityID, Position.Value)
      end
 end
 
