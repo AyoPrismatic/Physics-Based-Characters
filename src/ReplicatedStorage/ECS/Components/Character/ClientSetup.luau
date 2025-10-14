@@ -13,21 +13,10 @@ export type Entity<T> = Jecs.Entity<T>
 
 --Component Types  (made for other scripts to use)
 export type RootPart = Entity<Instance | BasePart>
-export type SpringVelocity = Entity<Vector3>
-export type SpringResponsiveness = Entity<number>
-export type SpringFrequency = Entity<number>
-export type SpringDamping = Entity<number>
-
 
 --[[Components]]
 local Components = {
-     RootPart = Characters:component() :: Entity<Instance | BasePart>,
-
-     --Spring System Variables
-     SpringVelocity = Characters:component() :: Entity<number>,
-     SpringResponsiveness = Characters:component() :: Entity<number>,
-     SpringFrequency = Characters:component() :: Entity<number>,
-     SpringDamping = Characters:component() :: Entity<number>,
+     RootPart = Characters:component() :: Entity<BasePart>,
 }
 
 local function Setup(GlobalComponents)

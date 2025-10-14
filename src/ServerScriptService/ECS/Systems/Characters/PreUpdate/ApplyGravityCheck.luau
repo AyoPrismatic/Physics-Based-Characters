@@ -14,42 +14,33 @@ local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 local PlayerStateComponent = CharacterComponents.List.PlayerState
 
 local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
-local PhysicsColliders = CharacterQueries.PhysicsColliders
+local PositionUpdates = CharacterQueries.PositionUpdates
 
 --Variables
 local DownVector = -Vector3.yAxis
 
-local FloatHeight = 1
-local Epsilon = 0.1
+local FloatHeight = 1.35
+local Epsilon = 0.12
 
-FloatHeight += Epsilon
-DownVector *= FloatHeight
+DownVector *= FloatHeight + Epsilon
 
-local function MakeParams(Collider : MeshPart) : RaycastParams
-     local Params = RaycastParams.new()
-     
-     Params.FilterType = Enum.RaycastFilterType.Exclude
-     Params.FilterDescendantsInstances = {Collider}
-     Params.RespectCanCollide = true
-     Params.CollisionGroup = "Game"
-     
-     return Params
-end
+local Params = RaycastParams.new()
 
-local function ProcessCollider(EntityID : number, Collider : MeshPart)
-     local ColliderPos = Collider:GetPivot().Position
-     local ColliderSize = Collider.Size
-     
-     local ColliderBottom = ColliderPos.Y - (ColliderSize.Y / 2)
-     local RaycastPos = Vector3.new(ColliderPos.X, ColliderBottom, ColliderPos.Z)
+Params.FilterType = Enum.RaycastFilterType.Include
+Params.FilterDescendantsInstances = {workspace}
+Params.RespectCanCollide = true
+Params.CollisionGroup = "Game"
+
+local function ProcessCollider(EntityID : number, Position : Vector3, Radius : number)
+     local RaycastPos = Vector3.new(Position.X, Position.Y - Radius, Position.Z) -- (Position.Y - Radius) = Bottom of Collider
 
      local Collision : RaycastResult? = workspace:Raycast(
           RaycastPos,
           DownVector,
-          MakeParams(Collider)
+          Params
      )
      
-     if not Collision then
+     if Collision == nil or Collision.Distance < (FloatHeight - Epsilon) then
           Characters:set(EntityID, PlayerStateComponent,
                PlayerStates.Falling
           )
@@ -57,11 +48,11 @@ local function ProcessCollider(EntityID : number, Collider : MeshPart)
 end
 
 local function GetColliders()
-     for EntityID : number, Collider : MeshPart in PhysicsColliders do
+     for EntityID : number, Position : Vector3Value, Radius : number in PositionUpdates do
           local PlayerState = Characters:get(EntityID, PlayerStateComponent)
           if PlayerState == PlayerStates.Falling then continue end
 
-          ProcessCollider(EntityID, Collider)
+          ProcessCollider(EntityID, Position.Value, Radius)
      end
 end
 

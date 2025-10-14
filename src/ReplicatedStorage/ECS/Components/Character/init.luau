@@ -24,8 +24,9 @@ type Velocity = Vector3
 --Component Types (made for other scripts to use)
 export type ForceVelocities = Entity<{[string] : {DecayRate | Velocity}}>
 export type HeldKeys = Entity<{[Enum.KeyCode] : boolean}>
+export type PhysicsColliderRadius = Entity<number>
 export type TravelledVelocity = Entity<Vector3>
-export type PhysicsCollider = Entity<Instance>
+export type Position = Entity<Vector3Value>
 export type MoveVelocity = Entity<Vector3>
 export type GroundNormal = Entity<Vector3>
 export type LookVector = Entity<Vector3>
@@ -35,7 +36,8 @@ export type AirTime = Entity<number>
 --[[Components]]
 local Components = {
      --Colliders
-     PhysicsCollider = Characters:component() :: Entity<Instance>,
+     PhysicsColliderRadius = Characters:component() :: Entity<number>,
+     Position = Characters:component() :: Entity<Vector3Value>,
 
      --Forces
      ForceVelocities = Characters:component() :: Entity<{[string] : {DecayRate | Velocity}}>, -- Externally Based Velocity
@@ -46,9 +48,6 @@ local Components = {
      GroundNormal = Characters:component() :: Entity<Vector3>, -- The Normal of the collision between the collider and floor
      GravityRate = Characters:component() :: Entity<number>, -- The Rate that Gravity will increase by each second
      AirTime = Characters:component() :: Entity<number>,
-
-     --Visual
-     TravelledVelocity = Characters:component() :: Entity<Vector3>, -- The velocity the client should use for spring physics
 
      --Limiting variables
      MaxTotalVelocity = Characters:component() :: Entity<number>,
@@ -66,13 +65,9 @@ local Components = {
 }
 
 local SharedComponents = {
-     [Components.TravelledVelocity] = UNRELIABLE,
-     [Components.ForceVelocities] = UNRELIABLE,
-     [Components.MoveVelocity] = UNRELIABLE,
-     [Components.Gravity] = UNRELIABLE,
-     [Components.AirTime] = UNRELIABLE,
+     [Components.PhysicsColliderRadius] = RELIABLE,
+     [Components.Position] = RELIABLE,
      
-     [Components.PlayerState] = UNRELIABLE,
      [Components.Player] = RELIABLE,
      [Components.Name] = RELIABLE
 }

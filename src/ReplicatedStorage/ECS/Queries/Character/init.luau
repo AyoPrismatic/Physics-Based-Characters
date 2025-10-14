@@ -11,11 +11,12 @@ local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 local Components = CharacterComponents.List
 
-local PhysicsCollider = Components.PhysicsCollider
+local PhysicsColliderRadius = Components.PhysicsColliderRadius
 local ForceVelocities = Components.ForceVelocities
 local MoveVelocity = Components.MoveVelocity
 local GroundNormal = Components.GroundNormal
 local LookVector = Components.LookVector
+local Position = Components.Position
 local HeldKeys = Components.HeldKeys
 local Gravity = Components.Gravity
 local AirTime = Components.AirTime
@@ -31,35 +32,37 @@ return --[[Queries]] table.freeze {
           Player
      )},
 
-     PhysicsColliders = Characters:query(PhysicsCollider):cached() :: {(
+     PositionUpdates = Characters:query(Position, PhysicsColliderRadius):cached() :: {(
           EntityID |
-          Component.PhysicsCollider
+          Component.Position |
+          Component.PhysicsColliderRadius
      )},
 
-     MovementRequests = Characters:query(HeldKeys, LookVector, GroundNormal):with(PhysicsCollider, MoveVelocity):cached() :: {(
+     MovementRequests = Characters:query(HeldKeys, LookVector, GroundNormal):with(Position, MoveVelocity):cached() :: {(
           EntityID |
           Component.HeldKeys |
           Component.LookVector |
           Component.GroundNormal
      )},
 
-     GravityUpdates = Characters:query(AirTime):with(PhysicsCollider, Gravity):cached() :: {(
+     GravityUpdates = Characters:query(AirTime):with(Position, Gravity):cached() :: {(
           EntityID |
           Component.AirTime
      )},
 
-     GravityAppliedEntities = Characters:query(PhysicsCollider, Gravity):cached() :: {(
+     GravityAppliedEntities = Characters:query(Position, PhysicsColliderRadius, Gravity):cached() :: {(
           EntityID |
-          Component.PhysicsCollider |
+          Component.Position |
+          Component.PhysicsColliderRadius |
           Component.Gravity
      )},
 
-     MovementAppliedEntities = Characters:query(MoveVelocity, PhysicsCollider):cached() :: {(
+     MovementAppliedEntities = Characters:query(MoveVelocity):with(Position):cached() :: {(
           EntityID |
           Component.MoveVelocity
      )},
 
-     ForceAppliedEntities = Characters:query(ForceVelocities, PhysicsCollider):cached() :: {(
+     ForceAppliedEntities = Characters:query(ForceVelocities):with(Position):cached() :: {(
           EntityID |
           Component.ForceVelocities
      )},

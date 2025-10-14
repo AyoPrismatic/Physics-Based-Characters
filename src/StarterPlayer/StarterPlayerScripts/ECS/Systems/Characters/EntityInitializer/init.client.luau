@@ -20,20 +20,16 @@ local RecievedFull : BindableEvent = ReplecEvents.RecievedFull
 --ECS
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
-local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
-local PhysicsColliders = CharacterQueries.PhysicsColliders
-
 local ClientCharacterComponents = require(ReplicatedStorage.ECS.Components.Character.ClientSetup)
+local RootPartComponent = ClientCharacterComponents.List.RootPart
 
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local PhysicsColliderComponent = CharacterComponents.List.PhysicsCollider
+local RadiusComponent = CharacterComponents.List.PhysicsColliderRadius
 local PlayerComponent = CharacterComponents.List.Player
 
 --Variables
 local EntityIDsDataTable = require(PlayerScripts.Data.Entities.Character.PlayerEntityIDs)
 local ComponentInitializers = require(script.ComponentInitializers)
-
-local PhysicsCollidersFolder = workspace.Colliders.PlayerCharacter.Physics
 
 local function AddComponent(EntityID : number, ComponentID : number, ComponentValue : any)
      if ComponentValue ~= nil then
@@ -43,18 +39,17 @@ local function AddComponent(EntityID : number, ComponentID : number, ComponentVa
      end
 end
 
-local function SetupEntity(EntityID : number, Collider : MeshPart)
+local function SetupEntity(EntityID : number, EntityPlayer : Player?, Radius : number?)
      if EntityIDsDataTable.GetPlayer(EntityID) then return end -- <- already set up
 
-     local EntityPlayer = Characters:get(EntityID, PlayerComponent)
-
-     Characters:set(EntityID, PhysicsColliderComponent, Collider) -- <- Sometimes it doesn't replicate properly so we set it here
+     EntityPlayer = Player or Characters:get(EntityID, PlayerComponent)
+     Radius = Radius or Characters:get(EntityID, RadiusComponent)
 
      for ComponentName, ComponentID in ClientCharacterComponents.List do
           local Value = ComponentInitializers[ComponentName]
 
           if type(Value) == "function" then
-               local Successful, Value = pcall(Value, EntityPlayer, EntityID, Collider)
+               local Successful, Value = pcall(Value, EntityPlayer, EntityID, Radius)
                if Successful ~= true then
                     warn(`\n Failed to create Component:`..
                          `\n Name: {ComponentName}` ..
@@ -69,22 +64,21 @@ local function SetupEntity(EntityID : number, Collider : MeshPart)
 
           EntityIDsDataTable.AddPair(EntityPlayer, EntityID)
      end
+
+     local RootPart = Characters:get(EntityID, RootPartComponent)
      
      local LoadedEvent = if EntityPlayer == Player then ClientLoaded else EntityLoaded
-     LoadedEvent:Fire(EntityPlayer, EntityID, Collider)
+     LoadedEvent:Fire(EntityPlayer, EntityID, RootPart)
 end
 
 Replicator:added(function(EntityID)
      Replicator:after_replication(function()
-          local ServerID = Replicator:get_server_entity(EntityID)
-          local PhysicsCollider = PhysicsCollidersFolder:WaitForChild(tostring(ServerID))
-
-          SetupEntity(EntityID, PhysicsCollider)
+          SetupEntity(EntityID)
      end)
 end)
 
 RecievedFull.Event:Once(function()
-     for EntityID, PhysicsCollider in PhysicsColliders do
-          SetupEntity(EntityID, PhysicsCollider)
+     for EntityID : number, Player : Player, Radius : number in Characters:query(PlayerComponent, RadiusComponent) do
+          SetupEntity(EntityID, Player, Radius)
      end
 end)

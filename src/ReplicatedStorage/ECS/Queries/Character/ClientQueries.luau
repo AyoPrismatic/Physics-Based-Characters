@@ -14,28 +14,18 @@ local ClientCharacterComponents = require(ReplicatedStorage.ECS.Components.Chara
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 
 local ClientComponent = ClientCharacterComponents.List
-local SpringResponsiveness = ClientComponent.SpringResponsiveness
-local SpringFrequency = ClientComponent.SpringFrequency
-local SpringVelocity = ClientComponent.SpringVelocity
-local SpringDamping = ClientComponent.SpringDamping
 local RootPart = ClientComponent.RootPart
 
 local Component = CharacterComponents.List
-local TravelledVelocity = Component.TravelledVelocity
-local PhysicsCollider = Component.PhysicsCollider
+local Position = Component.Position
 
 --Types
 type EntityID = number
 
 return --[[Queries]] table.freeze({
-     SpringSystem = Characters:query(RootPart, PhysicsCollider, SpringVelocity, TravelledVelocity, SpringFrequency, SpringDamping, SpringResponsiveness):cached() :: {{
+     CharacterPositionUpdates = Characters:query(RootPart, Position):cached() :: {(
           EntityID |
           ClientComponent.RootPart |
-          Component.PhysicsCollider |
-          ClientComponent.SpringVelocity |
-          Component.TravelledVelocity |
-          ClientComponent.SpringFrequency |
-          ClientComponent.SpringDamping |
-          ClientComponent.SpringResponsiveness
-     }},
+          Component.Position
+     )},
 })

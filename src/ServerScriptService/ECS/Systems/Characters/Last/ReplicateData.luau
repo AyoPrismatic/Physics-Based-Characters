@@ -17,8 +17,8 @@ local RequestUnreliable : UnreliableRemoteEvent = ReplecEvents.RequestUnreliable
 local RequestReliable : RemoteEvent = ReplecEvents.RequestReliable
 
 --Variables
-local UnreliablesReady = Interval(30) -- fires every 30 seconds
-local ReliablesReady = Interval(20)
+local UnreliablesReady = Interval(70) -- fires every 70 seconds
+local ReliablesReady = Interval(25)
 
 local function UpdateClientData()
      if ReliablesReady() then

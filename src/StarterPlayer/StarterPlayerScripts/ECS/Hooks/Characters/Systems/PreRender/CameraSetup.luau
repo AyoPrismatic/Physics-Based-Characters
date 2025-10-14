@@ -6,19 +6,19 @@ local CharacterEvents = ReplicatedStorage.Events.Entities.Character
 local ClientLoaded : BindableEvent = CharacterEvents.Client.ClientLoaded
 
 --Variables
-local PhysicsCollider : MeshPart
+local RootPart : MeshPart
 
-ClientLoaded.Event:Once(function(EntityPlayer : Player, EntityID : number, Collider : MeshPart)
-     PhysicsCollider = Collider
+ClientLoaded.Event:Once(function(EntityPalyer : Player, EntityID : number, Part : Part)
+     RootPart = Part
 end)
 
 local function CheckCamera()
      local Camera = workspace.CurrentCamera
 
-     if not Camera or not PhysicsCollider then return end
-     if Camera.CameraSubject == PhysicsCollider then return end
+     if not Camera or not RootPart then return end
+     if Camera.CameraSubject == RootPart then return end
 
-     Camera.CameraSubject = PhysicsCollider
+     Camera.CameraSubject = RootPart
 end
 
 return table.freeze({

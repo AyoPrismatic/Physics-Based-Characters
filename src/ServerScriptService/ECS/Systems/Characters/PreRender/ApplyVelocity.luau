@@ -7,17 +7,15 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
-local Vector3U = require(ReplicatedStorage.Utils.Vector)[3]
+local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 
-local PhysicsColliderComponent = CharacterComponents.List.PhysicsCollider
+local RadiusComponent = CharacterComponents.List.PhysicsColliderRadius
 local PlayerStateComponent = CharacterComponents.List.PlayerState
-
---Systems
-local UpdateTravelledVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.Update.UpdateTravelledVelocity)
+local PositionComponent = CharacterComponents.List.Position
 
 --Types
 type EntityID = number
@@ -29,9 +27,9 @@ local PlayerStates = require(ReplicatedStorage.ECS.EntityData.PlayerCharacter.Pl
 local PlayerVelocities : {[EntityID] : {Velocity}} = {}
 
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
-local AddedRayLength = 1
-local SkinWidth = 0.5
-local MaxBounces = 3
+local AddedRayLength = 5
+local SkinWidth = 0.25
+local MaxDepth = 3
 
 local Epsilon = 0.05
 
@@ -41,36 +39,32 @@ CollisionParams.FilterDescendantsInstances = {workspace}
 CollisionParams.RespectCanCollide = true
 CollisionParams.CollisionGroup = "Game"
 
-local function GetCollider(EntityID : number) : MeshPart
-     return Characters:get(EntityID, PhysicsColliderComponent)
-end
-
-local function MovePlayer(EntityID : number, PhysicsCollider : MeshPart, MoveVector : Vector3)
-     local CurrentCFrame : CFrame = PhysicsCollider:GetPivot()
-     local NewCFrame = CurrentCFrame + MoveVector
-
-     UpdateTravelledVelocitySystem.UpdateVelocityData(EntityID, MoveVector)
-     
-     PhysicsCollider:PivotTo(NewCFrame)
-end
-
 local function ProjectVelocity(LeftoverVelocity : Vector3, SurfaceNormal : Vector3) : Vector3
-     local LeftOverVector : Vector3 = Vector3U.ProjectOnPlane(LeftoverVelocity, SurfaceNormal).Unit
+     local ProjectedVector = UVector3.ProjectOnPlane(
+          LeftoverVelocity,
+          SurfaceNormal
+     )
 
-     return LeftOverVector * LeftoverVelocity.Magnitude
+     return LeftoverVelocity.Magnitude * ProjectedVector.Unit
 end
 
-local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider : MeshPart, Velocity : Vector3, HorizontalDirection : Vector3, Depth : number) -- Depth == Recursions
-     if Velocity ~= Velocity then return end -- Components are NaN
-     if Depth >= MaxBounces then return end
+local function HorizontalDir(Velocity : Vector3) : Vector3
+     if Velocity ~= Velocity or Velocity == Vector3.zero then return end -- Components are NaN / Zero
+     if Velocity.X == 0 and Velocity.Z == 0 then return Vector3.zero end-- Can't normalize
 
-     local ColliderPos = PhysicsCollider:GetPivot().Position
+     return Vector3.new(Velocity.X, 0, Velocity.Z).Unit * -1
+end
 
-     local VelocityDirection = if Velocity ~= Vector3.zero then Velocity.Unit else Vector3.zero
-     local RayVector = VelocityDirection * (Velocity.Magnitude + SkinWidth + AddedRayLength)
+--Returns the Vector travelledc
+local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Radius : number, Velocity : Vector3, Direction : Vector3, HorizontalDirection : Vector3, Recursions : number) : Vector3
+     if Velocity ~= Velocity or Velocity == Vector3.zero then return Vector3.zero end -- Components are NaN
+     if Recursions >= MaxDepth then return Vector3.zero end
      
-     local Collision : RaycastResult? = workspace:Shapecast(
-          PhysicsCollider,
+     local RayVector = Direction * (Velocity.Magnitude + SkinWidth + AddedRayLength)
+     
+     local Collision : RaycastResult? = workspace:Spherecast(
+          Position,
+          Radius,
           RayVector,
           CollisionParams
      )
@@ -86,7 +80,7 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
           elseif (DistanceToGoal >= SkinWidth - Epsilon) and (DistanceToGoal <= SkinWidth + Epsilon) then
                VectorToGoal = Vector3.zero -- At the desired range
           else
-               VectorToGoal = VelocityDirection * DistanceToGoal
+               VectorToGoal = Direction * DistanceToGoal
           end
 
           local RemainingVelocity = Velocity - VectorToGoal
@@ -116,10 +110,11 @@ local function CollideAndSlide(DT : number, EntityID : number, PhysicsCollider :
                ProjectedVector *= Scale
           end
 
-          MovePlayer(EntityID, PhysicsCollider, VectorToGoal)
-          CollideAndSlide(DT, EntityID, PhysicsCollider, ProjectedVector, HorizontalDirection, Depth + 1)
+          local NewPosition = Position + VectorToGoal
+          
+          return VectorToGoal + CollideAndSlide(DT, EntityID, NewPosition, Radius, ProjectedVector, ProjectedVector.Unit, HorizontalDirection, Recursions + 1)
      else
-          MovePlayer(EntityID, PhysicsCollider, Velocity)
+          return Velocity
      end
 end
 
@@ -127,13 +122,21 @@ local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
      for EntityID, Velocities in PlayerVelocities do
+          local Position : Vector3Value = Characters:get(EntityID, PositionComponent)
+          local Radius : number = Characters:get(EntityID, RadiusComponent)
+
+          local TransformationVector = Vector3.zero
+
           for _, Velocity in Velocities do
                if Velocity == Vector3.zero then continue end
 
-               local HorizontalDirection = Vector3.new(Velocity.X, 0, Velocity.Z).Unit * -1
+               local HorizontalDirection = HorizontalDir(Velocity)
+               local RayPosition = Position.Value + TransformationVector
                
-               CollideAndSlide(DT, EntityID, GetCollider(EntityID), Velocity, HorizontalDirection, 1)
+               TransformationVector += CollideAndSlide(DT, EntityID, RayPosition, Radius, Velocity, Velocity.Unit, HorizontalDirection, 1)
           end
+
+          Position.Value += TransformationVector
 
           PlayerVelocities[EntityID] = nil
      end
