@@ -8,6 +8,9 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
+--Packages
+local Squash = require(ReplicatedStorage.Packages.Squash)
+
 --ECS
 local Global = require(ReplicatedStorage.ECS.Globals.Character)
 
@@ -21,6 +24,10 @@ local GroundNormalComponent = Components.GroundNormal
 local PlayerStateComponent = Components.PlayerState
 local GravityComponent = Components.Gravity
 local AirTimeComponent = Components.AirTime
+
+--Squash
+local CursorFromBuffer = Squash.frombuffer
+local Uint = Squash.uint
 
 --Variables
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
@@ -103,13 +110,22 @@ end
 local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
-     for EntityID : number, Position : Vector3Value, Gravity : number in GravityAppliedEntities do
-          local PlayerState = Characters:get(EntityID, PlayerStateComponent)
-          if PlayerState ~= Global.PlayerStates.Falling then continue end
+     for EntityID : number, Position : Vector3Value, Gravity : buffer in GravityAppliedEntities do
+          if Characters:get(EntityID, PlayerStateComponent) ~= Global.PlayerStates.Falling then continue end
 
-          local Velocity = -Vector3.yAxis * (Gravity * DT)
+          Position.Value += CollideAndSlide(
+               DT,
+               EntityID,
+               Position.Value,
+               
+               -- | Velocity/Gravity
+               -- V
+               -Vector3.yAxis * -- Gravity Buffer Contains the last 4 decimals of Gravity, so we divide by 10k
+               (Uint(3).des(CursorFromBuffer(Gravity)) / 10000 * DT),
 
-          Position.Value += CollideAndSlide(DT, EntityID, Position.Value, Velocity, -Vector3.yAxis, 1)
+               -Vector3.yAxis,
+               1 -- <- Recursions
+          )
      end
 end
 

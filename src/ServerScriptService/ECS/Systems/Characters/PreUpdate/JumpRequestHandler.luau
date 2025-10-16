@@ -1,8 +1,10 @@
 --Services
+local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local ServerStorage = game:GetService('ServerStorage')
 
 --Modules
+local ForceVelocityManager = require(ServerScriptService.ECS.Modules.Characters.ForceVelocityManager)
 local PlayerEntityIDs = require(ServerStorage.Entities.Character.PlayerEntityIDs)
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local Collect = require(ReplicatedStorage.Utils.Collect)
@@ -10,12 +12,6 @@ local Collect = require(ReplicatedStorage.Utils.Collect)
 --Events
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
 local JumpRequest : RemoteEvent = CharacterEvents.Input.Jump
-
---ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
-
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local ForceVelocitiesComponent = CharacterComponents.List.ForceVelocities
 
 --Variables
 local Requests = Collect(JumpRequest.OnServerEvent)
@@ -37,10 +33,9 @@ local function ProcessJumpRequest(DT : number, Player : Player)
      if Debounces[Player] then return end
      
      local EntityID = PlayerEntityIDs.GetID(Player)
-     local ForceVelocities = Characters:get(EntityID, ForceVelocitiesComponent)
-     
-     ForceVelocities["Jump"] = {JumpVelocityDecay, Vector3.new(0, JumpVelocity, 0)}
-     
+
+     ForceVelocityManager.SetVelocity(nil, EntityID, "Jump", JumpVelocityDecay, Vector3.yAxis * JumpVelocity)
+
      task.spawn(DebouncePlayer, Player)
 end
 

@@ -21,17 +21,19 @@ type ComponentIndex = number
 type DecayRate = number
 type Velocity = Vector3
 
+type Uint24 = buffer
+
 --Component Types (made for other scripts to use)
 export type ForceVelocities = Entity<{[string] : {DecayRate | Velocity}}>
 export type HeldKeys = Entity<{[Enum.KeyCode] : boolean}>
 export type PhysicsColliderRadius = Entity<number>
 export type TravelledVelocity = Entity<Vector3>
+export type LookVector = Entity<Vector3int16>
 export type Position = Entity<Vector3Value>
 export type MoveVelocity = Entity<Vector3>
 export type GroundNormal = Entity<Vector3>
-export type LookVector = Entity<Vector3>
-export type Gravity = Entity<number>
 export type AirTime = Entity<number>
+export type Gravity = Entity<Uint24>
 
 --[[Components]]
 local Components = {
@@ -39,18 +41,17 @@ local Components = {
      Position = Characters:component() :: Entity<Vector3Value>,
 
      --Forces
-     ForceVelocities = Characters:component() :: Entity<{[string] : {DecayRate | Velocity}}>, -- Externally Based Velocity
+     ForceVelocities = Characters:component() :: Entity<{[string] : {DecayRate & Velocity}}>, -- Externally Based Velocity
      MoveVelocity = Characters:component() :: Entity<Vector3>, -- Player Input Based Velocity
-     Gravity = Characters:component() :: Entity<number>,
+     Gravity = Characters:component() :: Entity<Uint24>,
 
      --Gravity Variables
      GroundNormal = Characters:component() :: Entity<Vector3>, -- The Normal of the collision between the collider and floor
-     GravityRate = Characters:component() :: Entity<number>, -- The Rate that Gravity will increase by each second
      AirTime = Characters:component() :: Entity<number>,
 
      --Player Input Data
      HeldKeys = Characters:component() :: Entity<{[Enum.KeyCode] : boolean}>,
-     LookVector = Characters:component() :: Entity<Vector3>,
+     LookVector = Characters:component() :: Entity<Vector3int16>,
      
      --Extra Values
      PlayerState = Characters:component() :: Entity<string>,
@@ -146,8 +147,7 @@ end
 
 --[[Client]]
 if RunService:IsClient() then
-     local ClientComponents = require(script.ClientSetup)
-     ClientComponents.Setup(Components)
+     require(script.ClientSetup).Setup(Components)
 end
 
 return table.freeze({

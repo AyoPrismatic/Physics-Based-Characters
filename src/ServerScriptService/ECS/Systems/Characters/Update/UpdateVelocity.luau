@@ -15,13 +15,8 @@ local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local MovementAppliedEntities = CharacterQueries.MovementAppliedEntities
 local ForceAppliedEntities = CharacterQueries.ForceAppliedEntities
 
---Types
-type EntityID = number
-
-type DecayRate = number
-type Velocity = Vector3
-
 --Variables
+local GetVelocities = require(ServerScriptService.ECS.Modules.Characters.ForceVelocityManager).GetVelocities
 local ApplyVelocitySystem = require(ServerScriptService.ECS.Systems.Characters.PostUpdate.ApplyVelocity)
 
 local function CalculateVelocities()
@@ -31,8 +26,8 @@ local function CalculateVelocities()
           ApplyVelocitySystem.UpdateVelocityData(EntityID, MoveVelocity * DT)
      end
 
-     for EntityID, ForceVelocities : {[string?] : {DecayRate | Velocity}} in ForceAppliedEntities do
-          for _, VelocityData in ForceVelocities do
+     for EntityID, ForceVelocitiesBuf : buffer in ForceAppliedEntities do
+          for _, VelocityData in GetVelocities(ForceVelocitiesBuf) do
                ApplyVelocitySystem.UpdateVelocityData(EntityID, VelocityData[2] * DT)
           end
      end

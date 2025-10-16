@@ -17,13 +17,11 @@ local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local PositionUpdates = CharacterQueries.PositionUpdates
 
 --Variables
-local DownVector = -Vector3.yAxis
-
 local Radius = Global.PlayerCharacterRadius
 local FloatHeight = 1.35
 local Epsilon = 0.2
 
-DownVector *= FloatHeight + Epsilon
+local DownVector = -Vector3.yAxis * (FloatHeight + Epsilon)
 
 local Params = RaycastParams.new()
 
@@ -33,15 +31,13 @@ Params.RespectCanCollide = true
 Params.CollisionGroup = "Game"
 
 local function ProcessCollider(EntityID : number, Position : Vector3)
-     local RaycastPos = Vector3.new(Position.X, Position.Y - Radius, Position.Z) -- (Position.Y - Radius) = Bottom of Collider
-
      local Collision : RaycastResult? = workspace:Raycast(
-          RaycastPos,
+          Vector3.new(Position.X, Position.Y - Radius, Position.Z), -- <- (Position.Y - Radius) = Bottom of Collider
           DownVector,
           Params
      )
      
-     if Collision == nil or Collision.Distance < (FloatHeight - Epsilon) then
+     if not Collision or Collision.Distance < (FloatHeight - Epsilon) then
           Characters:set(EntityID, PlayerStateComponent,
                Global.PlayerStates.Falling
           )
@@ -50,10 +46,9 @@ end
 
 local function GetColliders()
      for EntityID : number, Position : Vector3Value in PositionUpdates do
-          local PlayerState = Characters:get(EntityID, PlayerStateComponent)
-          if PlayerState == Global.PlayerStates.Falling then continue end
-
-          ProcessCollider(EntityID, Position.Value)
+          if Characters:get(EntityID, PlayerStateComponent) ~= Global.PlayerStates.Falling then
+               ProcessCollider(EntityID, Position.Value)
+          end
      end
 end
 

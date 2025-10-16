@@ -21,9 +21,9 @@ return table.freeze({
           Collider.Massless = true
           Collider.Anchored = true
 
-          Collider.BrickColor = BrickColor.new("Really red")
+          Collider.Color = Color3.new(1, 0, 0)
           Collider.Material = Enum.Material.Neon
-          Collider.Transparency = 0.9
+          Collider.Transparency = 0.7
 
           Collider.Name = tostring(EntityID)
           Collider.Parent = workspace

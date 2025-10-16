@@ -25,6 +25,7 @@ type PlayerVelocities = {[EntityID] : Velocity}
 --Variables
 local PlayerVelocities : {[EntityID] : {Velocity}} = {}
 
+local MaxVelocityMagnitude = Global.ComponentLimits.VelocityMagnitude
 local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
 local Radius = Global.PlayerCharacterRadius
 local AddedRayLength = 5
@@ -142,8 +143,12 @@ local function UpdateEntities()
 end
 
 return {
-     UpdateVelocityData = function(EntityID, Velocity)
+     UpdateVelocityData = function(EntityID : number, Velocity : Vector3)
           local VelocityData = PlayerVelocities[EntityID]
+
+          if Velocity.Magnitude > MaxVelocityMagnitude then
+               Velocity = Velocity.Unit * MaxVelocityMagnitude
+          end
 
           if not VelocityData then
                PlayerVelocities[EntityID] = {Velocity}

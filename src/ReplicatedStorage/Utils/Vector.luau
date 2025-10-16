@@ -19,6 +19,6 @@ return table.freeze({
                          Vector.Z - PlaneNormal.Z * Dot / SqrMag
                     )
                end
-          end
+          end,
      })
 })

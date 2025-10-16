@@ -24,7 +24,6 @@ local ClientCharacterComponents = require(ReplicatedStorage.ECS.Components.Chara
 local RootPartComponent = ClientCharacterComponents.List.RootPart
 
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local RadiusComponent = CharacterComponents.List.PhysicsColliderRadius
 local PlayerComponent = CharacterComponents.List.Player
 
 --Variables
@@ -42,7 +41,7 @@ end
 local function SetupEntity(EntityID : number, EntityPlayer : Player?)
      if EntityIDsDataTable.GetPlayer(EntityID) then return end -- <- already set up
 
-     EntityPlayer = Player or Characters:get(EntityID, PlayerComponent)
+     EntityPlayer = EntityPlayer or Characters:get(EntityID, PlayerComponent)
 
      for ComponentName, ComponentID in ClientCharacterComponents.List do
           local Value = ComponentInitializers[ComponentName]
@@ -64,7 +63,11 @@ local function SetupEntity(EntityID : number, EntityPlayer : Player?)
           EntityIDsDataTable.AddPair(EntityPlayer, EntityID)
      end
 
-     local RootPart = Characters:get(EntityID, RootPartComponent)
+     local RootPart : BasePart = Characters:get(EntityID, RootPartComponent)
+     
+     Replicator:hook(EntityID, "deleted", function()
+          RootPart:Destroy()
+     end)
      
      local LoadedEvent = if EntityPlayer == Player then ClientLoaded else EntityLoaded
      LoadedEvent:Fire(EntityPlayer, EntityID, RootPart)

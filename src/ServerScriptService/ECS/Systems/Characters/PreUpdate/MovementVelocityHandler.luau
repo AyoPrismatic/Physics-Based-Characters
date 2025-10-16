@@ -45,33 +45,40 @@ local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : Held
      end
 
      if MoveVector == Vector3.zero then
-          Characters:set(EntityID, MoveVelocityComponent, Vector3.zero)
-          return
+          return Characters:set(EntityID, MoveVelocityComponent, Vector3.zero)
      end
-     
-     LookVector = Vector3.new(LookVector.X, 0, LookVector.Z).Unit
-     MoveVector = MoveVector.Unit
 
      local RightVector = Vector3.yAxis:Cross(LookVector)
-
-     local MoveDirection = LookVector * MoveVector.X + RightVector * MoveVector.Z
-
-     --The direction made into a tangent line on the surface of the ground
-     local TangentDirection = UVector3.ProjectOnPlane(MoveDirection, GroundNormal).Unit
-
-     local PreviousMoveVelocity : Vector3 = Characters:get(EntityID, MoveVelocityComponent)
-     local PreviousMagnitude = PreviousMoveVelocity.Magnitude
-
+     MoveVector = MoveVector.Unit
+     
      Characters:set(EntityID, MoveVelocityComponent,
-          TangentDirection * math.min(MoveSpeed, PreviousMagnitude + (SpeedUpTime * MoveSpeed * DT))
+          -- |
+          -- V Creates the tangent Direction on the surface of the ground and multiplies it to our move velocity
+          UVector3.ProjectOnPlane(
+               LookVector * MoveVector.X + RightVector * MoveVector.Z, -- <-- The Horizontal direction were moving in
+               GroundNormal
+          ).Unit * math.min( -- <-- The min function is slowly ramping up the velocity's over time to max speed.
+               MoveSpeed,
+               Characters:get(EntityID, MoveVelocityComponent).Magnitude + (SpeedUpTime * MoveSpeed * DT)
+          )
      )
 end
 
 local function ProccessRequests()
      local DT = Scheduler:getDeltaTime()
 
-     for EntityID, HeldKeys, LookVector, GroundNormal in MovementRequests do
-          CalculateVelocity(DT, EntityID, HeldKeys, LookVector, GroundNormal)
+     for EntityID, HeldKeys, CompressedLookVector, GroundNormal in MovementRequests do
+          CalculateVelocity(
+               DT,
+               EntityID,
+               HeldKeys,
+               Vector3.new( -- <- A normalized version of the horizontal movement
+                    CompressedLookVector.X / 10000,
+                    0,
+                    CompressedLookVector.Z / 10000
+               ).Unit,
+               GroundNormal
+          )
      end
 end
 

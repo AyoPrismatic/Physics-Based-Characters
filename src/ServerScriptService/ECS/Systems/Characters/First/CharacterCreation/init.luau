@@ -2,6 +2,7 @@
 --!native
 
 --Services
+local ServerScriptService = game:GetService('ServerScriptService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local ServerStorage = game:GetService('ServerStorage')
 local Players = game:GetService('Players')
@@ -12,6 +13,7 @@ local Planck = require(ReplicatedStorage.Packages.Planck)
 local Jecs = require(ReplicatedStorage.Packages.Jecs)
 
 --Modules
+local ForceVelocityManager = require(ServerScriptService.ECS.Modules.Characters.ForceVelocityManager)
 local EntityIDsDataTable = require(ServerStorage.Entities.Character.PlayerEntityIDs)
 local Collect = require(ReplicatedStorage.Utils.Collect)
 
@@ -22,6 +24,15 @@ local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 --Variables
 local ComponentInitializers = require(script.ComponentInitializers)
 local AddedPlayersCollection = Collect(Players.PlayerAdded)
+
+local function NewForceVelocityTable() : {[string] : {number & Vector3}}
+     return {
+          ["X"] = {0, Vector3.xAxis * 6},
+          ["-X"] = {0, Vector3.xAxis * -6},
+          ["Z"] = {0, Vector3.zAxis * 6},
+          ["-Z"] = {0, Vector3.zAxis * -6},
+     }
+end
 
 local function AddComponent(EntityID : number, ComponentID : number, ComponentValue : any)
      if ComponentValue ~= nil then
@@ -62,6 +73,11 @@ local function OnPlayerAdded(Player : Player)
      end
 
      EntityIDsDataTable.AddPair(Player, EntityID)
+
+     ForceVelocityManager.UpdateVelocities(
+          NewForceVelocityTable(),
+          EntityID
+     )
 
      print(
           `\n Created Player Character:`..
