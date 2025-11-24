@@ -56,7 +56,7 @@ local function HorizontalDir(Velocity : Vector3) : Vector3
      return Vector3.new(Velocity.X, 0, Velocity.Z).Unit * -1
 end
 
---Returns the Vector travelledc
+--Returns the Vector travelled
 local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Velocity : Vector3, Direction : Vector3, HorizontalDirection : Vector3, Recursions : number) : Vector3
      if Velocity ~= Velocity or Velocity == Vector3.zero then return Vector3.zero end -- Components are NaN
      if Recursions >= MaxDepth then return Vector3.zero end
@@ -97,16 +97,14 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
                local Normal = Vector3.new(Collision.Normal.X, 0, Collision.Normal.Z)
                local Scale = math.min(1, 1.2 - (Normal.Unit):Dot(HorizontalDirection))
                
-               local PlayerState = Characters:get(EntityID, PlayerStateComponent)
+               --if Characters:get(EntityID, PlayerStateComponent) == Global.PlayerStates.Grounded then
+               ProjectedVector = ProjectVelocity(
+                    Vector3.new(RemainingVelocity.X, 0, RemainingVelocity.Z), -- Remaining velocity from collision
+                    Normal
+               )
 
-               if PlayerState == Global.PlayerStates.Grounded then
-                    ProjectedVector = ProjectVelocity(
-                         Vector3.new(RemainingVelocity.X, 0, RemainingVelocity.Z), -- Remaining velocity from collision
-                         Normal
-                    )
-
-                    ProjectedVector = ProjectedVector.Unit * ProjectedVector.Magnitude
-               end
+               ProjectedVector = ProjectedVector.Unit * ProjectedVector.Magnitude
+               --end
 
                ProjectedVector *= Scale
           end
