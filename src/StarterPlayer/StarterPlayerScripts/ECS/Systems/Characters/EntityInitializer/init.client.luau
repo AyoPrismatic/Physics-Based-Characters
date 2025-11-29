@@ -18,20 +18,22 @@ local ReplecEvents = ReplicatedStorage.Events.REPLECS
 local RecievedFull : BindableEvent = ReplecEvents.RecievedFull
 
 --ECS
+local Serdes = require(ReplicatedStorage.ECS.Components.Character.Serdes)
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
-local ClientCharacterComponents = require(ReplicatedStorage.ECS.Components.Character.ClientSetup)
-local RootPartComponent = ClientCharacterComponents.List.RootPart
+local ClientCharacterComponents = require(ReplicatedStorage.ECS.Components.Character.ClientSetup).List
+local RootPartComponent = ClientCharacterComponents.RootPart
+local NameTagComponent = ClientCharacterComponents.NameTag
 
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local PlayerComponent = CharacterComponents.List.Player
+local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character).List
+local PlayerComponent = CharacterComponents.Player
 
 --Variables
 local EntityIDsDataTable = require(PlayerScripts.Data.Entities.Character.PlayerEntityIDs)
 local ComponentInitializers = require(script.ComponentInitializers)
 
 local function AddComponent(EntityID : number, ComponentID : number, ComponentValue : any)
-     if ComponentValue ~= nil then
+     if ComponentValue then
           Characters:set(EntityID, ComponentID, ComponentValue)
      else
           Characters:add(EntityID, ComponentID)
@@ -41,39 +43,42 @@ end
 local function SetupEntity(EntityID : number, EntityPlayer : Player?)
      if EntityIDsDataTable.GetPlayer(EntityID) then return end -- <- already set up
 
-     EntityPlayer = EntityPlayer or Characters:get(EntityID, PlayerComponent)
+     EntityPlayer = EntityPlayer or Serdes.GetDeserialized(EntityID, PlayerComponent)
 
-     for ComponentName, ComponentID in ClientCharacterComponents.List do
+     for ComponentName, ComponentID in ClientCharacterComponents do
           local Value = ComponentInitializers[ComponentName]
 
           if type(Value) == "function" then
-               local Successful, Value = pcall(Value, EntityPlayer, EntityID)
+               local Successful
+               Successful, Value = pcall(Value, EntityPlayer, EntityID)
                if Successful ~= true then
                     warn(`\n Failed to create Component:`..
                          `\n Name: {ComponentName}` ..
                          `\n Reason: {Value}`)
                     continue
                end
-
-               AddComponent(EntityID, ComponentID, Value)
-          else
-               AddComponent(EntityID, ComponentID, Value)
           end
-
-          EntityIDsDataTable.AddPair(EntityPlayer, EntityID)
+          
+          AddComponent(EntityID, ComponentID, Value)
      end
 
+     local NameTag : BillboardGui = Characters:get(EntityID, NameTagComponent)
      local RootPart : BasePart = Characters:get(EntityID, RootPartComponent)
      
+     NameTag.Adornee = RootPart
+     NameTag.Parent = RootPart
+
      Replicator:hook(EntityID, "deleted", function()
           RootPart:Destroy()
+          NameTag:Destroy()
      end)
      
      local LoadedEvent = if EntityPlayer == Player then ClientLoaded else EntityLoaded
      LoadedEvent:Fire(EntityPlayer, EntityID, RootPart)
+     EntityIDsDataTable.AddPair(EntityPlayer, EntityID)
 end
 
-Replicator:added(function(EntityID)
+Replicator:added(function(EntityID : number)
      Replicator:after_replication(function()
           SetupEntity(EntityID)
      end)

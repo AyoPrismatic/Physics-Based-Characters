@@ -1,24 +1,45 @@
---Services
-local ReplicatedStorage = game:GetService('ReplicatedStorage')
+--Types
+type PropertyName = string
+type StateName = string
 
---Variables
-local PhysicsCollider : Part = ReplicatedStorage.Colliders.Player.PhysicsCollider
-local ColliderSize = PhysicsCollider.Size
+type int = number
 
-local Globals = {}
+local CollisionParams = RaycastParams.new()
+CollisionParams.FilterType = Enum.RaycastFilterType.Include
+CollisionParams.FilterDescendantsInstances = {workspace}
+CollisionParams.RespectCanCollide = true
+CollisionParams.CollisionGroup = "Game"
 
-Globals.PlayerCharacterRadius = (ColliderSize.X + ColliderSize.Y + ColliderSize.Z) / 6 :: number
+local CharacterProperties : {[PropertyName] : any} = table.freeze{
+     CharacterRadius = 2.081,
 
-Globals.PlayerStates = table.freeze({
-     Grounded = 1,
-     Falling = 2,
-})
+     MaxSlopeAngle = math.rad(55), -- Vector3.Angle returns an angle in radians, so radians is used here
+     CollisionEpsilon = 0.12,
+     FloatHeight = 1.35,
 
-Globals.ComponentLimits = table.freeze({
+     RateOfGravity = 196.2,
+
+     JumpVelocityDecay = 5,
+     JumpVelocity = 150,
+     JumpDebounce = 0.25,
+
+     MinForceVelocity = 5,
+
+     ["CollisionParams"] = CollisionParams
+}
+
+local ComponentLimits : {[string] : any} = table.freeze{
      VelocityMagnitude = 1024,
      Gravity = 1000
-})
+}
 
-Globals.RateOfGravity = 196.2
+local PlayerStates : {[StateName] : int} = table.freeze{
+     Grounded = 1,
+     Falling = 2,
+}
 
-return Globals
+return table.freeze{
+     ["CharacterProperties"] = CharacterProperties,
+     ["ComponentLimits"] = ComponentLimits,
+     ["PlayerStates"] = PlayerStates
+}

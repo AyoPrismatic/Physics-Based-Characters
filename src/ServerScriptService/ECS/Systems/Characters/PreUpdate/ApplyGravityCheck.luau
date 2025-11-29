@@ -6,9 +6,11 @@
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --ECS
-local Global = require(ReplicatedStorage.ECS.Globals.Character)
+local CharacterGlobals = require(ReplicatedStorage.ECS.Globals.Character)
+local Properties = CharacterGlobals.CharacterProperties
+local PlayerStates = CharacterGlobals.PlayerStates
 
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
+local Serdes = require(ReplicatedStorage.ECS.Components.Character.Serdes)
 
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
 local PlayerStateComponent = CharacterComponents.List.PlayerState
@@ -17,37 +19,31 @@ local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local PositionUpdates = CharacterQueries.PositionUpdates
 
 --Variables
-local Radius = Global.PlayerCharacterRadius
-local FloatHeight = 1.35
-local Epsilon = 0.2
+local CollisionEpsilon = Properties.CollisionEpsilon
+local CollisionParams = Properties.CollisionParams
+local CharacterRadius = Properties.CharacterRadius
+local FloatHeight = Properties.FloatHeight
 
-local DownVector = -Vector3.yAxis * (FloatHeight + Epsilon)
-
-local Params = RaycastParams.new()
-
-Params.FilterType = Enum.RaycastFilterType.Include
-Params.FilterDescendantsInstances = {workspace}
-Params.RespectCanCollide = true
-Params.CollisionGroup = "Game"
+local DownVector = -Vector3.yAxis * (FloatHeight + CollisionEpsilon)
 
 local function ProcessCollider(EntityID : number, Position : Vector3)
-     local Collision : RaycastResult? = workspace:Raycast(
-          Vector3.new(Position.X, Position.Y - Radius, Position.Z), -- <- (Position.Y - Radius) = Bottom of Collider
-          DownVector,
-          Params
+     local Collision = workspace:Raycast(
+          Vector3.new(Position.X, Position.Y - CharacterRadius, Position.Z), -- <- (Position.Y - Radius) = Bottom of Collider
+          DownVector * 1.4,
+          CollisionParams
      )
      
-     if not Collision or Collision.Distance < (FloatHeight - Epsilon) then
-          Characters:set(EntityID, PlayerStateComponent,
-               Global.PlayerStates.Falling
+     if not Collision or Collision.Distance > (FloatHeight - CollisionEpsilon) then
+          Serdes.SerializeAndSet(EntityID, PlayerStateComponent,
+               PlayerStates.Falling
           )
      end
 end
 
 local function GetColliders()
-     for EntityID : number, Position : Vector3Value in PositionUpdates do
-          if Characters:get(EntityID, PlayerStateComponent) ~= Global.PlayerStates.Falling then
-               ProcessCollider(EntityID, Position.Value)
+     for EntityID : number, PositionObject : Vector3Value in PositionUpdates do
+          if Serdes.GetDeserialized(EntityID, PlayerStateComponent) ~= PlayerStates.Falling then
+               ProcessCollider(EntityID, PositionObject.Value)
           end
      end
 end

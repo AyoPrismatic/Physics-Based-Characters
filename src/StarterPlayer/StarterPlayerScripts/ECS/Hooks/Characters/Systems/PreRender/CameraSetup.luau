@@ -6,9 +6,9 @@ local CharacterEvents = ReplicatedStorage.Events.Entities.Character
 local ClientLoaded : BindableEvent = CharacterEvents.Client.ClientLoaded
 
 --Variables
-local RootPart : MeshPart
+local RootPart : Part
 
-ClientLoaded.Event:Once(function(EntityPalyer : Player, EntityID : number, Part : Part)
+ClientLoaded.Event:Once(function(_EntityPalyer : Player, _EntityID : number, Part : Part)
      RootPart = Part
 end)
 

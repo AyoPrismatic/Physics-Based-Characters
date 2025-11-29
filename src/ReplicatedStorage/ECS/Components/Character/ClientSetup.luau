@@ -17,6 +17,7 @@ export type RootPart = Entity<Instance | BasePart>
 --[[Components]]
 local Components = {
      RootPart = Characters:component() :: Entity<BasePart>,
+     NameTag = Characters:component() :: Entity<BasePart>,
 }
 
 local function Setup(GlobalComponents)

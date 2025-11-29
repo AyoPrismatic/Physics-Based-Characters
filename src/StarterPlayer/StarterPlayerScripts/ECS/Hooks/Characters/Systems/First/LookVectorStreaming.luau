@@ -10,12 +10,7 @@ local function UpdateLookVector()
      local Camera : Camera = workspace.CurrentCamera
      if not Camera then return end
 
-     local LookVector = Camera.CFrame.LookVector
-     LookVectorUpdate:FireServer(Vector3int16.new(
-          LookVector.X * 10000,
-          LookVector.Y * 10000,
-          LookVector.Z * 10000
-     ))
+     LookVectorUpdate:FireServer(Camera.CFrame.LookVector)
 end
 
 return table.freeze({

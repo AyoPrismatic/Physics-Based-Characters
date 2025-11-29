@@ -13,18 +13,23 @@ local Collect = require(ReplicatedStorage.Utils.Collect)
 local CharacterEvents = ReplicatedStorage.Events.Entities.Character
 local JumpRequest : RemoteEvent = CharacterEvents.Input.Jump
 
+--ECS
+local CharacterGlobals = require(ReplicatedStorage.ECS.Globals.Character)
+
 --Variables
 local Requests = Collect(JumpRequest.OnServerEvent)
-local Debounces : {[Player] : number} = {}
-local DebounceTime = 0.25
+local Debounces : {[Player] : boolean} = {}
 
-local JumpVelocity = 150
-local JumpVelocityDecay = 5
+--Properties
+local Properties = CharacterGlobals.CharacterProperties
 
+local JumpVelocityDecay = Properties.JumpVelocityDecay
+local JumpVelocity = Properties.JumpVelocity * Vector3.yAxis
+local JumpDebounce = Properties.JumpDebounce
 local function DebouncePlayer(Player : Player)
      Debounces[Player] = true
      
-     task.wait(DebounceTime)
+     task.wait(JumpDebounce)
      
      Debounces[Player] = false
 end
@@ -32,16 +37,15 @@ end
 local function ProcessJumpRequest(DT : number, Player : Player)
      if Debounces[Player] then return end
      
-     local EntityID = PlayerEntityIDs.GetID(Player)
-
-     ForceVelocityManager.SetVelocity(nil, EntityID, "Jump", JumpVelocityDecay, Vector3.yAxis * JumpVelocity)
-
+     ForceVelocityManager.SetVelocity(nil, PlayerEntityIDs.GetID(Player),
+          "Jump", JumpVelocityDecay, JumpVelocity
+     )
+     
      task.spawn(DebouncePlayer, Player)
 end
 
 local function ProcessRequests()
      local DT = Scheduler:getDeltaTime()
-     
      for _, Player in Requests do
          ProcessJumpRequest(DT, Player)
      end

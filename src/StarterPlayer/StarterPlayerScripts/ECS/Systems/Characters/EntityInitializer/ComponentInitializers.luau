@@ -2,10 +2,12 @@
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
 --Modules
-local Global = require(ReplicatedStorage.ECS.Globals.Character)
+local CharacterGlobals = require(ReplicatedStorage.ECS.Globals.Character)
+local Properties = CharacterGlobals.CharacterProperties
 
 --Variables
-local ColliderRadius = Global.PlayerCharacterRadius
+local CharacterAssetsFolder = ReplicatedStorage.Assets.Player
+local ColliderRadius = Properties.CharacterRadius
 
 return table.freeze({
      RootPart = function(_, EntityID : number)
@@ -29,5 +31,16 @@ return table.freeze({
           Collider.Parent = workspace
 
           return Collider
+     end,
+
+     NameTag = function(Player : Player)
+          local NameDisplay : BillboardGui = CharacterAssetsFolder.UsernameTemplate:Clone()
+          local NameLabel  : TextLabel = NameDisplay:FindFirstChildOfClass("TextLabel")
+
+          NameDisplay.StudsOffset = Vector3.yAxis * (ColliderRadius + 1)
+          NameDisplay.Parent = workspace
+          NameLabel.Text = string.upper(Player.Name)
+
+          return NameDisplay
      end
 })

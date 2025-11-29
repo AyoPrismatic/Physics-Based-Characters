@@ -27,7 +27,7 @@ local function ClearEntity(EntityID : number, Player : Player)
      local PositionValueObject : Vector3Value = Characters:get(EntityID, PositionComponent)
 
      PositionValueObject:Destroy()
-
+     
      Characters:delete(EntityID)
 end
 

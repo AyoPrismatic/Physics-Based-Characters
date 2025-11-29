@@ -5,16 +5,8 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
---Packages
-local Squash = require(ReplicatedStorage.Packages.Squash)
-
 --ECS
 local Global = require(ReplicatedStorage.ECS.Globals.Character)
-
---Squash
-local NewBuffer = Squash.tobuffer
-local NewCursor = Squash.cursor
-local Uint = Squash.uint
 
 --Variables
 local PlayerSpawnPointPart : BasePart = workspace.SpawnPoint
@@ -50,12 +42,7 @@ return table.freeze({
           return Vector3.zAxis * -1
      end,
      
-     Gravity = function() : buffer
-          local Cursor = NewCursor()
-          Uint(3).ser(Cursor, 0)
-
-          return NewBuffer(Cursor)
-     end,
+     Gravity = Zero,
      AirTime = Zero,
 
      HeldKeys = function() : {[Enum.KeyCode] : boolean}

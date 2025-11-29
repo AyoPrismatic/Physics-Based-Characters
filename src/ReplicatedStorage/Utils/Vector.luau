@@ -20,5 +20,13 @@ return table.freeze({
                     )
                end
           end,
+
+          SafeNormalize = function(Vector : Vector3) : Vector3
+               if Vector ~= Vector or Vector == Vector3.zero then 
+                    return Vector3.zero 
+               else 
+                    return Vector.Unit
+               end
+          end,
      })
 })

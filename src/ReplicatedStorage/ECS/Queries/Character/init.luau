@@ -1,9 +1,6 @@
 --Services
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
---Packages
-local Jecs = require(ReplicatedStorage.Packages.Jecs)
-
 --World
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
@@ -25,7 +22,7 @@ local Player = Components.Player
 local Component = CharacterComponents
 type EntityID = number
 
-return --[[Queries]] table.freeze {
+return --[[Queries]] table.freeze({
      Entities = Characters:query(Player):cached() :: {(
           EntityID |
           Player
@@ -33,7 +30,7 @@ return --[[Queries]] table.freeze {
 
      PositionUpdates = Characters:query(Position):cached() :: {(
           EntityID |
-          Component.Position 
+          Component.Position
      )},
 
      MovementRequests = Characters:query(HeldKeys, LookVector, GroundNormal):with(Position, MoveVelocity):cached() :: {(
@@ -63,4 +60,4 @@ return --[[Queries]] table.freeze {
           EntityID |
           Component.ForceVelocities
      )},
-}
+})

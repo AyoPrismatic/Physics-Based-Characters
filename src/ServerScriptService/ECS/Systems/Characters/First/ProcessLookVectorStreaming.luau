@@ -13,26 +13,24 @@ local CharacterEvents = ReplicatedStorage.Events.Entities.Character
 local LookVectorUpdate : UnreliableRemoteEvent = CharacterEvents.Input.LookVector
 
 --ECS
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
-local LookVectorComponent = require(ReplicatedStorage.ECS.Components.Character)
-LookVectorComponent = LookVectorComponent.List.LookVector
+local LookComponent = Components.LookVector
 
 --Variables
+local Serialize = require(ReplicatedStorage.ECS.Components.Character.Serdes).Serialize
 local GetEntityID = require(ServerStorage.Entities.Character.PlayerEntityIDs).GetID
 local PlayerUpdates = Collect(LookVectorUpdate.OnServerEvent)
 
-local function HandleRequest(Player : Player, CompressedLookVector : Vector3int16?) : nil
-     if typeof(CompressedLookVector) == "Vector3int16" then
-          Characters:set(GetEntityID(Player), LookVectorComponent,
-               CompressedLookVector
-          )
-     end
-end
-
 local function ProccessRequests() : nil
-     for _, Player, LookVector in PlayerUpdates do
-          HandleRequest(Player, LookVector)
+     for _, Player : Player, LookVector : Vector3? in PlayerUpdates do
+          if typeof(LookVector) ~= "Vector3" then continue end
+
+          Characters:set(
+               GetEntityID(Player), LookComponent,
+               Serialize(LookComponent, LookVector)
+          )
      end
 end
 

@@ -8,16 +8,15 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
---Packages
-local Squash = require(ReplicatedStorage.Packages.Squash)
-
 --ECS
-local Global = require(ReplicatedStorage.ECS.Globals.Character)
-
+local Serdes = require(ReplicatedStorage.ECS.Components.Character.Serdes)
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
-local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
-local GravityAppliedEntities = CharacterQueries.GravityAppliedEntities
+local GravityAppliedEntities = require(ReplicatedStorage.ECS.Queries.Character).GravityAppliedEntities
+
+local CharacterGlobals = require(ReplicatedStorage.ECS.Globals.Character)
+local Properties = CharacterGlobals.CharacterProperties
+local PlayerStates = CharacterGlobals.PlayerStates
 
 local Components = require(ReplicatedStorage.ECS.Components.Character).List
 local GroundNormalComponent = Components.GroundNormal
@@ -25,24 +24,18 @@ local PlayerStateComponent = Components.PlayerState
 local GravityComponent = Components.Gravity
 local AirTimeComponent = Components.AirTime
 
---Squash
-local CursorFromBuffer = Squash.frombuffer
-local Uint = Squash.uint
-
 --Variables
-local MaxSlopeAngle = math.rad(55) -- Vector3.Angle returns an angle in radians, so radians is used here
-local Radius = Global.PlayerCharacterRadius
-local AddedRayLength = 5
-local FloatHeight = 1.35
+local DownVector = -Vector3.yAxis
+local UpAxis = Vector3.yAxis
 local MaxBounces = 3
 
-local Epsilon = 0.12
+--Properties
+local CollisionEpsilon = Properties.CollisionEpsilon
+local CollisionParams = Properties.CollisionParams
+local MaxSlopeAngle = Properties.MaxSlopeAngle
 
-local CollisionParams = RaycastParams.new()
-CollisionParams.FilterType = Enum.RaycastFilterType.Include
-CollisionParams.FilterDescendantsInstances = {workspace}
-CollisionParams.RespectCanCollide = true
-CollisionParams.CollisionGroup = "Game"
+local CharacterRadius = Properties.CharacterRadius
+local FloatHeight = Properties.FloatHeight
 
 local function ProjectVelocity(LeftoverVelocity : Vector3, SurfaceNormal : Vector3) : Vector3
      return LeftoverVelocity.Magnitude * UVector3.ProjectOnPlane(
@@ -54,27 +47,24 @@ end
 local function CollideAndSlide(DT : number, EntityID : number, Position : Vector3, Velocity : Vector3, Direction : Vector3, Recursions : number) : Vector3
      if Recursions >= MaxBounces then return Vector3.zero end
 
-     local RayVector = Direction * (Velocity.Magnitude + AddedRayLength)
-     
-     local Collision : RaycastResult? = workspace:Spherecast(
+     local Collision = workspace:Spherecast(
           Position,
-          Radius,
-          RayVector,
+          CharacterRadius,
+          Direction * (Velocity.Magnitude + FloatHeight),
           CollisionParams
      )
      
      if Collision then
-          Characters:set(EntityID, GroundNormalComponent, Collision.Normal)
+          Serdes.SerializeAndSet(EntityID, GroundNormalComponent, Collision.Normal)
           
           --The distance from the bottom of the collider to the collision point (Y)
-          local DistanceToSurface = Position.Y - Radius - Collision.Position.Y
+          local DistanceToSurface = Position.Y - CharacterRadius - Collision.Position.Y
           local DistanceToFloatPoint = DistanceToSurface - FloatHeight
 
-          if (DistanceToSurface >= FloatHeight - Epsilon) and (DistanceToSurface <= FloatHeight + Epsilon) then
-               --Character Landed
-               Characters:set(EntityID, PlayerStateComponent, Global.PlayerStates.Grounded)
-               Characters:set(EntityID, GravityComponent, 0)
-               Characters:set(EntityID, AirTimeComponent, 0)
+          if (DistanceToSurface >= FloatHeight - CollisionEpsilon) and (DistanceToSurface <= FloatHeight + CollisionEpsilon) then -- Character Landed
+               Serdes.SerializeAndSet(EntityID, PlayerStateComponent, PlayerStates.Grounded)
+               Serdes.SerializeAndSet(EntityID, GravityComponent, 0)
+               Serdes.SerializeAndSet(EntityID, AirTimeComponent, 0)
           end
           
           --Due to added length, the distance can be farther than the gravity magnitude
@@ -83,7 +73,7 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
           end
 
           local VectorToGoal = Direction * DistanceToFloatPoint
-          local Angle = Vector3.yAxis:Angle(Collision.Normal)
+          local Angle = UpAxis:Angle(Collision.Normal)
           
           -- Slope isn't as steep as we want it for it to slide
           if Angle <= MaxSlopeAngle then
@@ -95,14 +85,12 @@ local function CollideAndSlide(DT : number, EntityID : number, Position : Vector
                Collision.Normal
           )
 
-          -- Makes slopes over the max angle make you move slower and slower the steeper it is
-          DT += (Angle - MaxSlopeAngle) * (1 - (MaxSlopeAngle/Angle))
+          -- Makes slopes over the max angle make you move Faster and Faster the steeper it is
+          ProjectedVelocity *= (DT + ((Angle - MaxSlopeAngle) * -(1 - (Angle/MaxSlopeAngle))))
 
-          ProjectedVelocity *= DT
-
-          return VectorToGoal + CollideAndSlide(DT, EntityID, Position, ProjectedVelocity, ProjectedVelocity.Unit, Recursions + 1)
+          return CollideAndSlide(DT, EntityID, Position + VectorToGoal, ProjectedVelocity, ProjectedVelocity.Unit, Recursions + 1)
      else
-          Characters:set(EntityID, GroundNormalComponent, Vector3.yAxis)
+          Serdes.SerializeAndSet(EntityID, GroundNormalComponent, UpAxis)
           return Velocity
      end
 end
@@ -111,21 +99,12 @@ local function UpdateEntities()
      local DT = Scheduler:getDeltaTime()
 
      for EntityID : number, Position : Vector3Value, Gravity : buffer in GravityAppliedEntities do
-          if Characters:get(EntityID, PlayerStateComponent) ~= Global.PlayerStates.Falling then continue end
-
-          Position.Value += CollideAndSlide(
-               DT,
-               EntityID,
-               Position.Value,
-               
-               -- | Velocity/Gravity
-               -- V
-               -Vector3.yAxis * -- Gravity Buffer Contains the last 4 decimals of Gravity, so we divide by 10k
-               (Uint(3).des(CursorFromBuffer(Gravity)) / 10000 * DT),
-
-               -Vector3.yAxis,
-               1 -- <- Recursions
-          )
+          if Serdes.GetDeserialized(EntityID, PlayerStateComponent) == PlayerStates.Falling then
+               Position.Value += CollideAndSlide(DT, EntityID, Position.Value,
+                    DownVector * Serdes.Deserialize(GravityComponent, Gravity) * DT, -- Velocity
+                    DownVector, -- Direction
+               1) -- Recursions
+          end
      end
 end
 

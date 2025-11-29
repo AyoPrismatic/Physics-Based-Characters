@@ -9,13 +9,17 @@ local Scheduler = require(ReplicatedStorage.ECS.Schedulers.Characters)
 local UVector3 = require(ReplicatedStorage.Utils.Vector)[3]
 
 --ECS
+local Serdes = require(ReplicatedStorage.ECS.Components.Character.Serdes)
 local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
 local CharacterQueries = require(ReplicatedStorage.ECS.Queries.Character)
 local MovementRequests = CharacterQueries.MovementRequests
 
-local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
-local MoveVelocityComponent = CharacterComponents.List.MoveVelocity
+local Components = require(ReplicatedStorage.ECS.Components.Character).List
+local GroundNormalComponent = Components.GroundNormal
+local MoveVelocityComponent = Components.MoveVelocity
+local LookVectorComponent = Components.LookVector
+local HeldKeysComponent = Components.HeldKeys
 
 --Types
 type HeldKeys = {[Enum.KeyCode] : boolean}
@@ -45,13 +49,13 @@ local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : Held
      end
 
      if MoveVector == Vector3.zero then
-          return Characters:set(EntityID, MoveVelocityComponent, Vector3.zero)
+          return Serdes.SerializeAndSet(EntityID, MoveVelocityComponent, Vector3.zero)
      end
-
+     
      local RightVector = Vector3.yAxis:Cross(LookVector)
      MoveVector = MoveVector.Unit
      
-     Characters:set(EntityID, MoveVelocityComponent,
+     Serdes.SerializeAndSet(EntityID, MoveVelocityComponent,
           -- |
           -- V Creates the tangent Direction on the surface of the ground and multiplies it to our move velocity
           UVector3.ProjectOnPlane(
@@ -59,7 +63,7 @@ local function CalculateVelocity(DT : number, EntityID : number, HeldKeys : Held
                GroundNormal
           ).Unit * math.min( -- <-- The min function is slowly ramping up the velocity's over time to max speed.
                MoveSpeed,
-               Characters:get(EntityID, MoveVelocityComponent).Magnitude + (SpeedUpTime * MoveSpeed * DT)
+               Serdes.GetDeserialized(EntityID, MoveVelocityComponent).Magnitude + (SpeedUpTime * MoveSpeed * DT)
           )
      )
 end
@@ -67,17 +71,11 @@ end
 local function ProccessRequests()
      local DT = Scheduler:getDeltaTime()
 
-     for EntityID, HeldKeys, CompressedLookVector, GroundNormal in MovementRequests do
-          CalculateVelocity(
-               DT,
-               EntityID,
-               HeldKeys,
-               Vector3.new( -- <- A normalized version of the horizontal movement
-                    CompressedLookVector.X / 10000,
-                    0,
-                    CompressedLookVector.Z / 10000
-               ).Unit,
-               GroundNormal
+     for EntityID : number, HeldKeys : buffer, LookVector : buffer, GroundNormal : buffer in MovementRequests do
+          CalculateVelocity(DT, EntityID,
+               Serdes.Deserialize(HeldKeysComponent, HeldKeys),
+               Serdes.Deserialize(LookVectorComponent, LookVector),
+               Serdes.Deserialize(GroundNormalComponent, GroundNormal)
           )
      end
 end

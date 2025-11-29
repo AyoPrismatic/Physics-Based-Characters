@@ -18,24 +18,30 @@ local EntityIDsDataTable = require(ServerStorage.Entities.Character.PlayerEntity
 local Collect = require(ReplicatedStorage.Utils.Collect)
 
 --ECS
-local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 local CharacterComponents = require(ReplicatedStorage.ECS.Components.Character)
+local Serdes = require(ReplicatedStorage.ECS.Components.Character.Serdes)
+local Characters = require(ReplicatedStorage.ECS.Worlds.Characters)
 
 --Variables
 local ComponentInitializers = require(script.ComponentInitializers)
 local AddedPlayersCollection = Collect(Players.PlayerAdded)
 
-local function NewForceVelocityTable() : {[string] : {number & Vector3}}
+type CharacterVelocities = {[string] : {number | Vector3}}
+
+local function NewForceVelocityTable() : CharacterVelocities
      return {
           ["X"] = {0, Vector3.xAxis * 6},
           ["-X"] = {0, Vector3.xAxis * -6},
           ["Z"] = {0, Vector3.zAxis * 6},
           ["-Z"] = {0, Vector3.zAxis * -6},
+          ["Y"] = {0, Vector3.yAxis * 6},
+          ["-Y"] = {0, Vector3.yAxis * -6},
      }
 end
 
 local function AddComponent(EntityID : number, ComponentID : number, ComponentValue : any)
-     if ComponentValue ~= nil then
+     if ComponentValue then
+          ComponentValue = Serdes.TrySerializing(ComponentID, ComponentValue)
           Characters:set(EntityID, ComponentID, ComponentValue)
      else
           Characters:add(EntityID, ComponentID)
@@ -54,37 +60,32 @@ local function OnPlayerAdded(Player : Player)
      for ComponentName, ComponentID in CharacterComponents.List do
           local ReplicationType = CharacterComponents.SharedComponents[ComponentID]
           local Value = ComponentInitializers[ComponentName]
-          
+
           if type(Value) == "function" then
-               local Successful, Value = pcall(Value, Player, EntityID)
+               local Successful
+               Successful, Value = pcall(Value, Player, EntityID)
                if Successful ~= true then
                     warn(`\n Failed to create Component:`..
                          `\n Name: {ComponentName}` ..
                          `\n Reason: {Value}`)
                     continue
                end
-
-               AddComponent(EntityID, ComponentID, Value)
-          else
-               AddComponent(EntityID, ComponentID, Value)
           end
 
+          AddComponent(EntityID, ComponentID, Value)
           ReplicateComponent(EntityID, ComponentID, ReplicationType)
      end
-
+     
      EntityIDsDataTable.AddPair(Player, EntityID)
-
      ForceVelocityManager.UpdateVelocities(
           NewForceVelocityTable(),
           EntityID
      )
 
-     print(
-          `\n Created Player Character:`..
-          `\n Player Name: {Player.Name}`
-     )
-
      Characters:add(EntityID, Replecs.Networked)
+
+     print(`\n Created Player Character:`..
+           `\n Player Name: {Player.Name}`)
 end
 
 local function ProcessPlayers()
